@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editor de Texto em Lote</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --bg-panel: #16181d;
+      --bg-input: #1c1f26;
+      --border: #2a2d37;
+      --text: #e6e9ef;
+      --text-muted: #8b92a5;
+      --primary: #3b82f6;
+      --primary-hover: #2563eb;
+      --success: #22c55e;
+      --warning: #eab308;
+      --danger: #ef4444;
+      --radius: 8px;
+      --shadow: 0 4px 12px rgba(0,0,0,0.3);
+      --transition: 0.2s ease;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+    }
+
+    .app { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
+    header span { font-size: 0.85rem; color: var(--text-muted); }
+
+    .grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; align-items: start; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+
+    /* Editor (Visível/Sticky) */
+    .editor-wrap {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem;
+      display: flex; flex-direction: column; gap: 0.75rem;
+      position: sticky; top: 20px; z-index: 10;
+    }
+    @media (max-width: 900px) { .editor-wrap { position: static; } }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .toolbar button {
+      background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+      padding: 0.5rem 0.75rem; border-radius: var(--radius); cursor: pointer;
+      font-size: 0.85rem; transition: var(--transition);
+    }
+    .toolbar button:hover { background: var(--border); }
+    .toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #editor {
+      width: 100%; min-height: 400px; background: var(--bg-input); color: var(--text);
+      border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-size: 0.9rem; resize: vertical; line-height: 1.6;
+    }
+    #editor:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    .status-bar {
+      margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+    .status-dot.processing { background: var(--warning); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Tools Panel (Rolável) */
+    .tools-panel { 
+      max-height: calc(100vh - 120px); 
+      overflow-y: auto; 
+      padding-right: 0.5rem;
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .tools-panel::-webkit-scrollbar { width: 6px; }
+    .tools-panel::-webkit-scrollbar-track { background: transparent; }
+    .tools-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .tool-card {
+      background: var(--bg-panel); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 1rem;
+    }
+    .tool-card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--primary); }
+    .form-row { margin-bottom: 0.75rem; }
+    .form-row label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem; }
+    .form-row input, .form-row select {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text); padding: 0.5rem; border-radius: var(--radius); font-size: 0.9rem;
+    }
+    .form-row input:focus, .form-row select:focus { outline: 2px solid var(--primary); border-color: transparent; }
+    .form-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; margin: 0.5rem 0; }
+    .btn-primary {
+      width: 100%; background: var(--primary); color: white; border: none;
+      padding: 0.6rem; border-radius: var(--radius); cursor: pointer; font-weight: 500;
+      transition: var(--transition); margin-top: 0.5rem;
+    }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:active { transform: scale(0.98); }
+
+    /* Preview Box */
+    .preview-box {
+      margin-top: 0.75rem;
+      padding: 0.6rem 0.75rem;
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.25);
+      border-radius: var(--radius);
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.85rem;
+      color: var(--success);
+      word-break: break-all;
+      line-height: 1.4;
+      min-height: 2.5rem;
+      transition: var(--transition);
+    }
+    .preview-label {
+      display: block;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+      font-family: system-ui, sans-serif;
+    }
+    .preview-placeholder { color: var(--text-muted); font-style: italic; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 20px; right: 20px; background: var(--bg-panel);
+      border: 1px solid var(--border); color: var(--text); padding: 0.75rem 1rem;
+      border-radius: var(--radius); box-shadow: var(--shadow); transform: translateY(20px);
+      opacity: 0; transition: var(--transition); z-index: 1000; pointer-events: none;
+      font-size: 0.85rem; max-width: 300px;
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 4px solid var(--success); }
+    #toast.error { border-left: 4px solid var(--danger); }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header>
+      <h1>Editor de Texto em Lote</h1>
+      <span>v1.2 • Processamento local • 100% offline</span>
+    </header>
+
+    <main class="grid">
+      <section class="editor-wrap">
+        <div class="toolbar">
+          <button id="btn-undo" disabled>↩️ Desfazer</button>
+          <button id="btn-restore">🔄 Restaurar Original</button>
+          <button id="btn-copy">📋 Copiar Resultado</button>
+          <button id="btn-download">💾 Baixar .txt</button>
+          <button id="btn-clear" style="margin-left: auto; color: var(--danger);">🗑️ Limpar</button>
+        </div>
+        <textarea id="editor" placeholder="Cole ou digite seu texto aqui...&#10;Cada linha será processada individualmente."></textarea>
+        <div class="status-bar">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Pronto. Digite ou cole um texto para começar.</span>
+        </div>
+      </section>
+
+      <section class="tools-panel">
+        <div class="tool-card">
+          <h3>🔍 Localizar & Substituir</h3>
+          <div class="form-row">
+            <label for="find-text">Localizar</label>
+            <input type="text" id="find-text" placeholder="Texto atual...">
+          </div>
+          <div class="form-row">
+            <label for="replace-text">Substituir por</label>
+            <input type="text" id="replace-text" placeholder="Novo texto...">
+          </div>
+          <label class="form-check">
+            <input type="checkbox" id="find-case"> Diferenciar maiúsculas/minúsculas
+          </label>
+          <button class="btn-primary" id="btn-find-replace">Aplicar Substituição</button>
+        </div>
+
+        <div class="tool-card">
+          <h3>📝 Prefixo & Sufixo</h3>
+          <div class="form-row">
+            <label for="prefix-text">Prefixo</label>
+            <input type="text" id="prefix-text" placeholder="No início da linha...">
+          </div>
+          <div class="form-row">
+            <label for="suffix-text">Sufixo</label>
+            <input type="text" id="suffix-text" placeholder="No final da linha...">
+          </div>
+          <label class="form-check">
+            <input type="checkbox" id="ignore-empty" checked> Ignorar linhas vazias
+          </label>
+          <button class="btn-primary" id="btn-prefix-suffix">Aplicar Prefixo/Sufixo</button>
+        </div>
+
+        <div class="tool-card">
+          <h3>📍 Inserção Posicional</h3>
+          <div class="form-row">
+            <label for="insert-text">Texto a Inserir</label>
+            <input type="text" id="insert-text" placeholder="Ex: 0">
+          </div>
+          <div class="form-row" style="display: flex; gap: 0.5rem;">
+            <div style="flex:1">
+              <label for="insert-pos">Posição</label>
+              <input type="number" id="insert-pos" min="0" value="2">
+            </div>
+            <div style="flex:1">
+              <label for="insert-dir">Direção</label>
+              <select id="insert-dir">
+                <option value="end">A partir do final</option>
+                <option value="start" selected>A partir do início</option>
+              </select>
+            </div>
+          </div>
+          <label class="form-check">
+            <input type="checkbox" id="insert-ignore-empty" checked> Ignorar linhas vazias
+          </label>
+          <div class="preview-box" id="insert-preview-box">
+            <span class="preview-label">Prévia (1ª linha):</span>
+            <span id="insert-preview" class="preview-placeholder">Aguardando alterações...</span>
+          </div>
+          <button class="btn-primary" id="btn-insert">Aplicar Inserção</button>
+        </div>
+
+        <div class="tool-card">
+          <h3>🔢 Enumerador de Linhas</h3>
+          <div class="form-row" style="display: flex; gap: 0.5rem;">
+            <div style="flex:1">
+              <label for="enum-start">Iniciar em</label>
+              <input type="number" id="enum-start" value="1" min="1">
+            </div>
+            <div style="flex:1">
+              <label for="enum-digits">Dígitos (casas)</label>
+              <input type="number" id="enum-digits" value="2" min="1" max="10">
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="enum-sep">Separador após número</label>
+            <input type="text" id="enum-sep" value=" - " placeholder="Ex: -  ou . ">
+          </div>
+          <label class="form-check">
+            <input type="checkbox" id="enum-ignore-empty" checked> Ignorar linhas vazias
+          </label>
+          <button class="btn-primary" id="btn-enumerate">Aplicar Enumeração</button>
+        </div>
+
+        <div class="tool-card">
+          <h3>✂️ Excluir Caracteres</h3>
+          <div class="form-row" style="display: flex; gap: 0.5rem;">
+            <div style="flex:1">
+              <label for="rem-count">Qtd. Caracteres</label>
+              <input type="number" id="rem-count" value="1" min="0">
+            </div>
+            <div style="flex:1">
+              <label for="rem-dir">Direção</label>
+              <select id="rem-dir">
+                <option value="start" selected>Do início</option>
+                <option value="end">Do final</option>
+              </select>
+            </div>
+          </div>
+          <label class="form-check">
+            <input type="checkbox" id="rem-ignore-empty" checked> Ignorar linhas vazias
+          </label>
+          <div class="preview-box" id="rem-preview-box">
+            <span class="preview-label">Prévia (1ª linha):</span>
+            <span id="rem-preview" class="preview-placeholder">Aguardando alterações...</span>
+          </div>
+          <button class="btn-primary" id="btn-remove">Aplicar Exclusão</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    // Estado
+    const state = { original: '', current: '', history: [], maxHistory: 20 };
+
+    // Elementos
+    const els = {
+      editor: document.getElementById('editor'),
+      statusText: document.getElementById('status-text'),
+      statusDot: document.getElementById('status-dot'),
+      toast: document.getElementById('toast'),
+      btnUndo: document.getElementById('btn-undo'),
+      btnRestore: document.getElementById('btn-restore'),
+      btnCopy: document.getElementById('btn-copy'),
+      btnDownload: document.getElementById('btn-download'),
+      btnClear: document.getElementById('btn-clear')
+    };
+
+    // Utils
+    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const showToast = (msg, type = 'success') => {
+      els.toast.textContent = msg;
+      els.toast.className = `show ${type}`;
+      setTimeout(() => els.toast.className = '', 3000);
+    };
+    const setStatus = (msg, processing = false) => {
+      els.statusText.textContent = msg;
+      els.statusDot.className = `status-dot ${processing ? 'processing' : ''}`;
+    };
+
+    // State & History
+    const saveToHistory = () => {
+      state.history.push(state.current);
+      if (state.history.length > state.maxHistory) state.history.shift();
+      els.btnUndo.disabled = false;
+    };
+    const updateEditor = (text) => {
+      state.current = text;
+      els.editor.value = text;
+      setStatus(`Texto atualizado. ${text.split('\n').length} linhas.`);
+    };
+    const processText = (transformFn) => {
+      const input = els.editor.value;
+      if (!input) return showToast('Nenhum texto para processar.', 'error');
+      if (input.length > 500000) showToast('Texto grande detectado. Processando...', 'success');
+
+      setStatus('Processando...', true);
+      setTimeout(() => {
+        saveToHistory();
+        const lines = input.split('\n');
+        let changed = 0;
+        const result = lines.map(line => {
+          const before = line;
+          const after = transformFn(line);
+          if (before !== after) changed++;
+          return after;
+        });
+        updateEditor(result.join('\n'));
+        setStatus(`✅ ${changed} linha(s) modificada(s).`);
+        showToast(`${changed} linha(s) alterada(s) com sucesso.`);
+      }, 10);
+    };
+
+    // Prévia: Inserção Posicional
+    const updateInsertPreview = () => {
+      const firstLine = els.editor.value.split('\n')[0]?.replace(/\r$/, '') || '';
+      const text = document.getElementById('insert-text').value;
+      const pos = parseInt(document.getElementById('insert-pos').value, 10) || 0;
+      const dir = document.getElementById('insert-dir').value;
+      const ignoreEmpty = document.getElementById('insert-ignore-empty').checked;
+      const previewEl = document.getElementById('insert-preview');
+
+      if (!firstLine) return (previewEl.textContent = '(Nenhum texto)', previewEl.className = 'preview-placeholder');
+      if (ignoreEmpty && firstLine.trim() === '') return (previewEl.textContent = '(Linha vazia ignorada)', previewEl.className = 'preview-placeholder');
+      if (!text) return (previewEl.textContent = firstLine, previewEl.className = '');
+
+      const len = firstLine.length;
+      let idx = dir === 'start' ? Math.min(Math.max(0, pos), len) : Math.min(Math.max(0, len - pos), len);
+      const result = `${firstLine.slice(0, idx)}${text}${firstLine.slice(idx)}`;
+      previewEl.textContent = result;
+      previewEl.className = '';
+    };
+
+    // Prévia: Excluir Caracteres
+    const updateRemPreview = () => {
+      const firstLine = els.editor.value.split('\n')[0]?.replace(/\r$/, '') || '';
+      const count = parseInt(document.getElementById('rem-count').value, 10) || 0;
+      const dir = document.getElementById('rem-dir').value;
+      const ignoreEmpty = document.getElementById('rem-ignore-empty').checked;
+      const previewEl = document.getElementById('rem-preview');
+
+      if (!firstLine) return (previewEl.textContent = '(Nenhum texto)', previewEl.className = 'preview-placeholder');
+      if (ignoreEmpty && firstLine.trim() === '') return (previewEl.textContent = '(Linha vazia ignorada)', previewEl.className = 'preview-placeholder');
+      if (count === 0) return (previewEl.textContent = firstLine, previewEl.className = '');
+
+      const safeCount = Math.min(count, firstLine.length);
+      const result = dir === 'start' ? firstLine.slice(safeCount) : firstLine.slice(0, -safeCount || undefined);
+      previewEl.textContent = result;
+      previewEl.className = '';
+    };
+
+    // Event Listeners para Prévias
+    ['insert-text', 'insert-pos', 'insert-dir', 'insert-ignore-empty', 'rem-count', 'rem-dir', 'rem-ignore-empty'].forEach(id => {
+      document.getElementById(id).addEventListener('input', id.startsWith('insert') ? updateInsertPreview : updateRemPreview);
+      document.getElementById(id).addEventListener('change', id.startsWith('insert') ? updateInsertPreview : updateRemPreview);
+    });
+    els.editor.addEventListener('input', () => {
+      state.current = els.editor.value;
+      if (!state.original && state.current) state.original = state.current;
+      setStatus(`Editando... (${state.current.split('\n').length} linhas)`);
+      updateInsertPreview();
+      updateRemPreview();
+    });
+
+    // Ações das Ferramentas
+    document.getElementById('btn-find-replace').addEventListener('click', () => {
+      const find = document.getElementById('find-text').value;
+      const replace = document.getElementById('replace-text').value;
+      if (!find) return showToast('Preencha "Localizar".', 'error');
+      const caseSensitive = document.getElementById('find-case').checked;
+      processText(line => caseSensitive ? line.replaceAll(find, replace) : line.replace(new RegExp(escapeRegex(find), 'gi'), replace));
+    });
+
+    document.getElementById('btn-prefix-suffix').addEventListener('click', () => {
+      const prefix = document.getElementById('prefix-text').value;
+      const suffix = document.getElementById('suffix-text').value;
+      if (!prefix && !suffix) return showToast('Preencha prefixo ou sufixo.', 'error');
+      const ignore = document.getElementById('ignore-empty').checked;
+      processText(line => (ignore && line.trim() === '') ? line : `${prefix}${line}${suffix}`);
+    });
+
+    document.getElementById('btn-insert').addEventListener('click', () => {
+      const text = document.getElementById('insert-text').value;
+      const pos = parseInt(document.getElementById('insert-pos').value, 10) || 0;
+      const dir = document.getElementById('insert-dir').value;
+      const ignore = document.getElementById('insert-ignore-empty').checked;
+      processText(line => {
+        if (!text || (ignore && line.trim() === '')) return line;
+        const len = line.length;
+        let idx = dir === 'start' ? Math.min(Math.max(0, pos), len) : Math.min(Math.max(0, len - pos), len);
+        return `${line.slice(0, idx)}${text}${line.slice(idx)}`;
+      });
+    });
+
+    document.getElementById('btn-enumerate').addEventListener('click', () => {
+      let start = parseInt(document.getElementById('enum-start').value, 10) || 1;
+      const digits = parseInt(document.getElementById('enum-digits').value, 10) || 2;
+      const sep = document.getElementById('enum-sep').value;
+      const ignore = document.getElementById('enum-ignore-empty').checked;
+      
+      processText(line => {
+        if (ignore && line.trim() === '') return line;
+        const num = String(start++).padStart(digits, '0');
+        return `${num}${sep}${line}`;
+      });
+    });
+
+    document.getElementById('btn-remove').addEventListener('click', () => {
+      const count = parseInt(document.getElementById('rem-count').value, 10) || 0;
+      const dir = document.getElementById('rem-dir').value;
+      const ignore = document.getElementById('rem-ignore-empty').checked;
+      if (count < 0) return showToast('Quantidade inválida.', 'error');
+      
+      processText(line => {
+        if (ignore && line.trim() === '') return line;
+        const safe = Math.min(count, line.length);
+        return dir === 'start' ? line.slice(safe) : line.slice(0, -safe || undefined);
+      });
+    });
+
+    // Ações Globais
+    els.btnUndo.addEventListener('click', () => {
+      if (!state.history.length) return;
+      state.current = state.history.pop();
+      els.editor.value = state.current;
+      els.btnUndo.disabled = !state.history.length;
+      setStatus(`↩️ Desfeito. ${state.current.split('\n').length} linhas.`);
+      showToast('Desfeito com sucesso.');
+    });
+    els.btnRestore.addEventListener('click', () => {
+      if (!state.original) return showToast('Nenhum original salvo.', 'error');
+      saveToHistory(); updateEditor(state.original); showToast('Original restaurado.');
+    });
+    els.btnCopy.addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(els.editor.value); showToast('Copiado!'); } 
+      catch { showToast('Falha ao copiar.', 'error'); }
+    });
+    els.btnDownload.addEventListener('click', () => {
+      if (!els.editor.value) return showToast('Nada para baixar.', 'error');
+      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([els.editor.value], {type:'text/plain'}));
+      a.download = 'texto_editado.txt'; a.click(); showToast('Download iniciado.');
+    });
+    els.btnClear.addEventListener('click', () => {
+      if (!els.editor.value) return; saveToHistory(); state.original = ''; updateEditor(''); showToast('Limpo.');
+    });
+    els.editor.addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); els.btnUndo.click(); }});
+
+    // Init
+    els.editor.focus(); updateInsertPreview(); updateRemPreview();
+  </script>
+</body>
+</html>
