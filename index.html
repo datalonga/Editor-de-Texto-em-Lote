@@ -6,484 +6,279 @@
   <title>Editor de Texto em Lote</title>
   <style>
     :root {
-      --bg: #0f1115;
-      --bg-panel: #16181d;
-      --bg-input: #1c1f26;
-      --border: #2a2d37;
-      --text: #e6e9ef;
-      --text-muted: #8b92a5;
-      --primary: #3b82f6;
-      --primary-hover: #2563eb;
-      --success: #22c55e;
-      --warning: #eab308;
-      --danger: #ef4444;
-      --radius: 8px;
-      --shadow: 0 4px 12px rgba(0,0,0,0.3);
-      --transition: 0.2s ease;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #334155;
+      --text-muted: #64748b;
+      --success: #10b981;
+      --accent: #f1f5f9;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      min-height: 100vh;
-    }
-
-    .app { max-width: 1400px; margin: 0 auto; padding: 1rem; }
-    header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
-    }
-    header h1 { font-size: 1.5rem; font-weight: 600; letter-spacing: -0.02em; }
-    header span { font-size: 0.85rem; color: var(--text-muted); }
-
-    .grid { display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; align-items: start; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-
-    /* Editor (Visível/Sticky) */
-    .editor-wrap {
-      background: var(--bg-panel);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 1rem;
-      display: flex; flex-direction: column; gap: 0.75rem;
-      position: sticky; top: 20px; z-index: 10;
-    }
-    @media (max-width: 900px) { .editor-wrap { position: static; } }
-
-    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; }
-    .toolbar button {
-      background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
-      padding: 0.5rem 0.75rem; border-radius: var(--radius); cursor: pointer;
-      font-size: 0.85rem; transition: var(--transition);
-    }
-    .toolbar button:hover { background: var(--border); }
-    .toolbar button:disabled { opacity: 0.5; cursor: not-allowed; }
-    #editor {
-      width: 100%; min-height: 400px; background: var(--bg-input); color: var(--text);
-      border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.9rem; resize: vertical; line-height: 1.6;
-    }
-    #editor:focus { outline: 2px solid var(--primary); border-color: transparent; }
-    .status-bar {
-      margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);
-      display: flex; align-items: center; gap: 0.5rem;
-    }
-    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
-    .status-dot.processing { background: var(--warning); animation: pulse 1s infinite; }
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-
-    /* Tools Panel (Rolável) */
-    .tools-panel { 
-      max-height: calc(100vh - 120px); 
-      overflow-y: auto; 
-      padding-right: 0.5rem;
-      scrollbar-width: thin;
-      scrollbar-color: var(--border) transparent;
-      display: flex; flex-direction: column; gap: 1rem;
-    }
-    .tools-panel::-webkit-scrollbar { width: 6px; }
-    .tools-panel::-webkit-scrollbar-track { background: transparent; }
-    .tools-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-
-    .tool-card {
-      background: var(--bg-panel); border: 1px solid var(--border);
-      border-radius: var(--radius); padding: 1rem;
-    }
-    .tool-card h3 { font-size: 0.95rem; margin-bottom: 0.75rem; color: var(--primary); }
-    .form-row { margin-bottom: 0.75rem; }
-    .form-row label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem; }
-    .form-row input, .form-row select {
-      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
-      color: var(--text); padding: 0.5rem; border-radius: var(--radius); font-size: 0.9rem;
-    }
-    .form-row input:focus, .form-row select:focus { outline: 2px solid var(--primary); border-color: transparent; }
-    .form-check { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; cursor: pointer; margin: 0.5rem 0; }
-    .btn-primary {
-      width: 100%; background: var(--primary); color: white; border: none;
-      padding: 0.6rem; border-radius: var(--radius); cursor: pointer; font-weight: 500;
-      transition: var(--transition); margin-top: 0.5rem;
-    }
-    .btn-primary:hover { background: var(--primary-hover); }
-    .btn-primary:active { transform: scale(0.98); }
-
-    /* Preview Box */
-    .preview-box {
-      margin-top: 0.75rem;
-      padding: 0.6rem 0.75rem;
-      background: rgba(34, 197, 94, 0.08);
-      border: 1px solid rgba(34, 197, 94, 0.25);
-      border-radius: var(--radius);
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.85rem;
-      color: var(--success);
-      word-break: break-all;
-      line-height: 1.4;
-      min-height: 2.5rem;
-      transition: var(--transition);
-    }
-    .preview-label {
-      display: block;
-      font-size: 0.7rem;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: var(--text-muted);
-      margin-bottom: 0.25rem;
-      font-family: system-ui, sans-serif;
-    }
-    .preview-placeholder { color: var(--text-muted); font-style: italic; }
-
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 20px; right: 20px; background: var(--bg-panel);
-      border: 1px solid var(--border); color: var(--text); padding: 0.75rem 1rem;
-      border-radius: var(--radius); box-shadow: var(--shadow); transform: translateY(20px);
-      opacity: 0; transition: var(--transition); z-index: 1000; pointer-events: none;
-      font-size: 0.85rem; max-width: 300px;
-    }
-    #toast.show { transform: translateY(0); opacity: 1; }
-    #toast.success { border-left: 4px solid var(--success); }
-    #toast.error { border-left: 4px solid var(--danger); }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
+    .container { max-width: 920px; margin: 0 auto; }
+    
+    header { margin-bottom: 20px; text-align: center; }
+    header h1 { font-size: 1.6rem; margin-bottom: 4px; color: var(--primary); }
+    header p { color: var(--text-muted); font-size: 0.9rem; }
+    
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
+    .toolbar button { padding: 8px 14px; border: 1px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
+    .toolbar button:hover { background: #f1f5f9; transform: translateY(-1px); }
+    
+    textarea { width: 100%; height: 180px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 14px; resize: vertical; margin-bottom: 20px; transition: border 0.2s; }
+    textarea:focus { outline: none; border-color: var(--primary); }
+    
+    .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    .section h3 { margin-bottom: 12px; font-size: 1.1rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
+    
+    .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; align-items: flex-end; }
+    .form-group { flex: 1; min-width: 130px; }
+    .form-group label { display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: 500; color: var(--text-muted); }
+    .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: #fafafa; }
+    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); background: #fff; }
+    
+    .checkbox-group { display: flex; align-items: center; gap: 6px; margin: 10px 0; font-size: 0.9rem; cursor: pointer; }
+    .checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
+    
+    .preview-box { background: var(--accent); padding: 10px; border-radius: 6px; margin: 10px 0; font-family: monospace; font-size: 0.9rem; word-break: break-all; min-height: 38px; display: flex; align-items: center; gap: 6px; border: 1px dashed #cbd5e1; }
+    .preview-box span { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
+    
+    .btn-apply { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%; margin-top: 8px; transition: 0.2s; }
+    .btn-apply:hover { background: var(--primary-hover); }
+    
+    .btn-sm { padding: 6px 10px; font-size: 0.85rem; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; }
+    .btn-sm:hover { background: #cbd5e1; }
+    
+    .status { text-align: center; margin-top: 8px; font-size: 0.9rem; color: var(--success); min-height: 20px; }
+    .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="app">
+  <div class="container">
     <header>
       <h1>Editor de Texto em Lote</h1>
-      <span>v1.2 • Processamento local • 100% offline</span>
+      <p>v1.3 • Processamento local • 100% offline</p>
     </header>
 
-    <main class="grid">
-      <section class="editor-wrap">
-        <div class="toolbar">
-          <button id="btn-undo" disabled>↩️ Desfazer</button>
-          <button id="btn-restore">🔄 Restaurar Original</button>
-          <button id="btn-copy">📋 Copiar Resultado</button>
-          <button id="btn-download">💾 Baixar .txt</button>
-          <button id="btn-clear" style="margin-left: auto; color: var(--danger);">🗑️ Limpar</button>
-        </div>
-        <textarea id="editor" placeholder="Cole ou digite seu texto aqui...&#10;Cada linha será processada individualmente."></textarea>
-        <div class="status-bar">
-          <span class="status-dot" id="status-dot"></span>
-          <span id="status-text">Pronto. Digite ou cole um texto para começar.</span>
-        </div>
-      </section>
+    <div class="toolbar">
+      <button id="btnUndo">↩️ Desfazer</button>
+      <button id="btnRestore">🔄 Restaurar Original</button>
+      <button id="btnCopy">📋 Copiar Resultado</button>
+      <button id="btnDownload">💾 Baixar .txt</button>
+      <button id="btnClear">🗑️ Limpar</button>
+    </div>
 
-      <section class="tools-panel">
-        <div class="tool-card">
-          <h3>🔍 Localizar & Substituir</h3>
-          <div class="form-row">
-            <label for="find-text">Localizar</label>
-            <input type="text" id="find-text" placeholder="Texto atual...">
-          </div>
-          <div class="form-row">
-            <label for="replace-text">Substituir por</label>
-            <input type="text" id="replace-text" placeholder="Novo texto...">
-          </div>
-          <label class="form-check">
-            <input type="checkbox" id="find-case"> Diferenciar maiúsculas/minúsculas
-          </label>
-          <button class="btn-primary" id="btn-find-replace">Aplicar Substituição</button>
-        </div>
+    <textarea id="editor" placeholder="Pronto. Digite ou cole um texto para começar."></textarea>
+    <div id="statusMsg" class="status"></div>
 
-        <div class="tool-card">
-          <h3>📝 Prefixo & Sufixo</h3>
-          <div class="form-row">
-            <label for="prefix-text">Prefixo</label>
-            <input type="text" id="prefix-text" placeholder="No início da linha...">
-          </div>
-          <div class="form-row">
-            <label for="suffix-text">Sufixo</label>
-            <input type="text" id="suffix-text" placeholder="No final da linha...">
-          </div>
-          <label class="form-check">
-            <input type="checkbox" id="ignore-empty" checked> Ignorar linhas vazias
-          </label>
-          <button class="btn-primary" id="btn-prefix-suffix">Aplicar Prefixo/Sufixo</button>
-        </div>
+    <!-- 🔍 Localizar & Substituir -->
+    <div class="section" id="secFindReplace">
+      <h3>🔍 Localizar & Substituir</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Localizar</label><input type="text" id="findText" placeholder="Ex: antigo"></div>
+        <div class="form-group"><label>Substituir por</label><input type="text" id="replaceText" placeholder="Ex: novo"></div>
+      </div>
+      <label class="checkbox-group"><input type="checkbox" id="caseSensitive"> Diferenciar maiúsculas/minúsculas</label>
+      <button class="btn-apply" id="btnApplyFindReplace">Aplicar Substituição</button>
+    </div>
 
-        <div class="tool-card">
-          <h3>📍 Inserção Posicional</h3>
-          <div class="form-row">
-            <label for="insert-text">Texto a Inserir</label>
-            <input type="text" id="insert-text" placeholder="Ex: 0">
-          </div>
-          <div class="form-row" style="display: flex; gap: 0.5rem;">
-            <div style="flex:1">
-              <label for="insert-pos">Posição</label>
-              <input type="number" id="insert-pos" min="0" value="2">
-            </div>
-            <div style="flex:1">
-              <label for="insert-dir">Direção</label>
-              <select id="insert-dir">
-                <option value="end">A partir do final</option>
-                <option value="start" selected>A partir do início</option>
-              </select>
-            </div>
-          </div>
-          <label class="form-check">
-            <input type="checkbox" id="insert-ignore-empty" checked> Ignorar linhas vazias
-          </label>
-          <div class="preview-box" id="insert-preview-box">
-            <span class="preview-label">Prévia (1ª linha):</span>
-            <span id="insert-preview" class="preview-placeholder">Aguardando alterações...</span>
-          </div>
-          <button class="btn-primary" id="btn-insert">Aplicar Inserção</button>
+    <!-- 📍 Inserção & Exclusão UNIFICADA (Substitui Prefixo/Sufixo + Inserção/Exclusão) -->
+    <div class="section" id="secPosManip">
+      <h3>📍 Inserção & Exclusão de Caracteres</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Modo:</label>
+          <select id="posMode">
+            <option value="inserir">Inserir Texto</option>
+            <option value="excluir">Excluir Caracteres</option>
+          </select>
         </div>
+        <div class="form-group">
+          <label>Posição:</label>
+          <input type="number" id="posIndex" min="0" value="0" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label>Direção:</label>
+          <select id="posDir">
+            <option value="inicio">Do início</option>
+            <option value="final">Do final</option>
+          </select>
+        </div>
+      </div>
 
-        <div class="tool-card">
-          <h3>🔢 Enumerador de Linhas</h3>
-          <div class="form-row" style="display: flex; gap: 0.5rem;">
-            <div style="flex:1">
-              <label for="enum-start">Iniciar em</label>
-              <input type="number" id="enum-start" value="1" min="1">
-            </div>
-            <div style="flex:1">
-              <label for="enum-digits">Dígitos (casas)</label>
-              <input type="number" id="enum-digits" value="2" min="1" max="10">
-            </div>
-          </div>
-          <div class="form-row">
-            <label for="enum-sep">Separador após número</label>
-            <input type="text" id="enum-sep" value=" - " placeholder="Ex: -  ou . ">
-          </div>
-          <label class="form-check">
-            <input type="checkbox" id="enum-ignore-empty" checked> Ignorar linhas vazias
-          </label>
-          <button class="btn-primary" id="btn-enumerate">Aplicar Enumeração</button>
-        </div>
+      <div class="form-row" style="justify-content: flex-start; gap: 8px; margin-bottom: 10px;">
+        <button type="button" id="presetInicio" class="btn-sm">📌 Modo Início (Pos 0)</button>
+        <button type="button" id="presetFinal" class="btn-sm">📌 Modo Final (Pos 0)</button>
+      </div>
 
-        <div class="tool-card">
-          <h3>✂️ Excluir Caracteres</h3>
-          <div class="form-row" style="display: flex; gap: 0.5rem;">
-            <div style="flex:1">
-              <label for="rem-count">Qtd. Caracteres</label>
-              <input type="number" id="rem-count" value="1" min="0">
-            </div>
-            <div style="flex:1">
-              <label for="rem-dir">Direção</label>
-              <select id="rem-dir">
-                <option value="start" selected>Do início</option>
-                <option value="end">Do final</option>
-              </select>
-            </div>
-          </div>
-          <label class="form-check">
-            <input type="checkbox" id="rem-ignore-empty" checked> Ignorar linhas vazias
-          </label>
-          <div class="preview-box" id="rem-preview-box">
-            <span class="preview-label">Prévia (1ª linha):</span>
-            <span id="rem-preview" class="preview-placeholder">Aguardando alterações...</span>
-          </div>
-          <button class="btn-primary" id="btn-remove">Aplicar Exclusão</button>
-        </div>
-      </section>
-    </main>
+      <div id="campoTextoInserir" class="form-group">
+        <label>Texto a Inserir:</label>
+        <input type="text" id="posText" placeholder="Digite o texto...">
+      </div>
+      <div id="campoQtdExcluir" class="form-group hidden">
+        <label>Qtd. Caracteres:</label>
+        <input type="number" id="posQty" min="1" value="1" placeholder="1">
+      </div>
+
+      <label class="checkbox-group"><input type="checkbox" id="ignoreEmptyPos"> Ignorar linhas vazias</label>
+      
+      <div class="preview-box">
+        <span>Prévia (1ª linha):</span> <span id="previewPos">Aguardando alterações...</span>
+      </div>
+      <button class="btn-apply" id="btnApplyPos">Aplicar Inserção</button>
+    </div>
+
+    <!-- 🔢 Enumerador de Linhas -->
+    <div class="section" id="secEnum">
+      <h3>🔢 Enumerador de Linhas</h3>
+      <div class="form-row">
+        <div class="form-group"><label>Iniciar em</label><input type="number" id="enumStart" value="1"></div>
+        <div class="form-group"><label>Dígitos (casas)</label><input type="number" id="enumDigits" min="1" max="6" value="2"></div>
+        <div class="form-group"><label>Separador</label><input type="text" id="enumSep" value=". "></div>
+      </div>
+      <label class="checkbox-group"><input type="checkbox" id="ignoreEmptyEnum"> Ignorar linhas vazias</label>
+      <button class="btn-apply" id="btnApplyEnum">Aplicar Enumeração</button>
+    </div>
   </div>
 
-  <div id="toast"></div>
-
   <script>
-    // Estado
-    const state = { original: '', current: '', history: [], maxHistory: 20 };
+    // 📦 Estado & Utilitários
+    const editor = document.getElementById('editor');
+    const statusMsg = document.getElementById('statusMsg');
+    let originalText = '';
+    let history = [];
+    const MAX_HISTORY = 25;
 
-    // Elementos
-    const els = {
-      editor: document.getElementById('editor'),
-      statusText: document.getElementById('status-text'),
-      statusDot: document.getElementById('status-dot'),
-      toast: document.getElementById('toast'),
-      btnUndo: document.getElementById('btn-undo'),
-      btnRestore: document.getElementById('btn-restore'),
-      btnCopy: document.getElementById('btn-copy'),
-      btnDownload: document.getElementById('btn-download'),
-      btnClear: document.getElementById('btn-clear')
+    const saveState = () => {
+      if (editor.value !== originalText) {
+        history.push(editor.value);
+        if (history.length > MAX_HISTORY) history.shift();
+      }
     };
 
-    // Utils
-    const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const showToast = (msg, type = 'success') => {
-      els.toast.textContent = msg;
-      els.toast.className = `show ${type}`;
-      setTimeout(() => els.toast.className = '', 3000);
-    };
-    const setStatus = (msg, processing = false) => {
-      els.statusText.textContent = msg;
-      els.statusDot.className = `status-dot ${processing ? 'processing' : ''}`;
-    };
+    const status = (msg) => { statusMsg.textContent = msg; setTimeout(() => statusMsg.textContent = '', 2500); };
+    const getLines = () => editor.value.split('\n');
+    const setLines = (arr) => editor.value = arr.join('\n');
 
-    // State & History
-    const saveToHistory = () => {
-      state.history.push(state.current);
-      if (state.history.length > state.maxHistory) state.history.shift();
-      els.btnUndo.disabled = false;
+    // 🛠️ Botões da Toolbar
+    document.getElementById('btnRestore').onclick = () => { editor.value = originalText; history = []; status('Texto original restaurado.'); };
+    document.getElementById('btnClear').onclick = () => { editor.value = ''; originalText = ''; history = []; status('Editor limpo.'); };
+    document.getElementById('btnCopy').onclick = () => { navigator.clipboard.writeText(editor.value).then(() => status('Copiado!')); };
+    document.getElementById('btnDownload').onclick = () => {
+      const blob = new Blob([editor.value], {type: 'text/plain'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'processado.txt';
+      a.click();
     };
-    const updateEditor = (text) => {
-      state.current = text;
-      els.editor.value = text;
-      setStatus(`Texto atualizado. ${text.split('\n').length} linhas.`);
+    document.getElementById('btnUndo').onclick = () => {
+      if (history.length > 0) { editor.value = history.pop(); status('Ação desfeita.'); }
     };
-    const processText = (transformFn) => {
-      const input = els.editor.value;
-      if (!input) return showToast('Nenhum texto para processar.', 'error');
-      if (input.length > 500000) showToast('Texto grande detectado. Processando...', 'success');
+    editor.addEventListener('input', () => { if (!originalText) originalText = editor.value; });
 
-      setStatus('Processando...', true);
-      setTimeout(() => {
-        saveToHistory();
-        const lines = input.split('\n');
-        let changed = 0;
-        const result = lines.map(line => {
-          const before = line;
-          const after = transformFn(line);
-          if (before !== after) changed++;
-          return after;
-        });
-        updateEditor(result.join('\n'));
-        setStatus(`✅ ${changed} linha(s) modificada(s).`);
-        showToast(`${changed} linha(s) alterada(s) com sucesso.`);
-      }, 10);
+    // 🔍 Localizar & Substituir
+    document.getElementById('btnApplyFindReplace').onclick = () => {
+      const find = document.getElementById('findText').value;
+      if (!find) return status('Preencha "Localizar".');
+      const replace = document.getElementById('replaceText').value;
+      const caseSensitive = document.getElementById('caseSensitive').checked;
+      const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), caseSensitive ? 'g' : 'gi');
+      saveState();
+      setLines(getLines().map(l => l.replace(regex, replace)));
+      status('Substituição aplicada.');
     };
 
-    // Prévia: Inserção Posicional
-    const updateInsertPreview = () => {
-      const firstLine = els.editor.value.split('\n')[0]?.replace(/\r$/, '') || '';
-      const text = document.getElementById('insert-text').value;
-      const pos = parseInt(document.getElementById('insert-pos').value, 10) || 0;
-      const dir = document.getElementById('insert-dir').value;
-      const ignoreEmpty = document.getElementById('insert-ignore-empty').checked;
-      const previewEl = document.getElementById('insert-preview');
-
-      if (!firstLine) return (previewEl.textContent = '(Nenhum texto)', previewEl.className = 'preview-placeholder');
-      if (ignoreEmpty && firstLine.trim() === '') return (previewEl.textContent = '(Linha vazia ignorada)', previewEl.className = 'preview-placeholder');
-      if (!text) return (previewEl.textContent = firstLine, previewEl.className = '');
-
-      const len = firstLine.length;
-      let idx = dir === 'start' ? Math.min(Math.max(0, pos), len) : Math.min(Math.max(0, len - pos), len);
-      const result = `${firstLine.slice(0, idx)}${text}${firstLine.slice(idx)}`;
-      previewEl.textContent = result;
-      previewEl.className = '';
+    // 🔢 Enumerador
+    document.getElementById('btnApplyEnum').onclick = () => {
+      const start = parseInt(document.getElementById('enumStart').value) || 1;
+      const digits = parseInt(document.getElementById('enumDigits').value) || 2;
+      const sep = document.getElementById('enumSep').value;
+      const ignore = document.getElementById('ignoreEmptyEnum').checked;
+      let counter = start;
+      saveState();
+      setLines(getLines().map(l => {
+        if (ignore && l.trim() === '') return l;
+        return counter.toString().padStart(digits, '0') + sep + (counter++ ? l : '');
+      }));
+      status('Enumeração aplicada.');
     };
 
-    // Prévia: Excluir Caracteres
-    const updateRemPreview = () => {
-      const firstLine = els.editor.value.split('\n')[0]?.replace(/\r$/, '') || '';
-      const count = parseInt(document.getElementById('rem-count').value, 10) || 0;
-      const dir = document.getElementById('rem-dir').value;
-      const ignoreEmpty = document.getElementById('rem-ignore-empty').checked;
-      const previewEl = document.getElementById('rem-preview');
+    // 📍 Inserção & Exclusão UNIFICADA
+    const posMode = document.getElementById('posMode');
+    const posIndex = document.getElementById('posIndex');
+    const posDir = document.getElementById('posDir');
+    const posText = document.getElementById('posText');
+    const posQty = document.getElementById('posQty');
+    const campoInserir = document.getElementById('campoTextoInserir');
+    const campoExcluir = document.getElementById('campoQtdExcluir');
+    const btnPos = document.getElementById('btnApplyPos');
+    const previewPos = document.getElementById('previewPos');
+    const ignorePos = document.getElementById('ignoreEmptyPos');
 
-      if (!firstLine) return (previewEl.textContent = '(Nenhum texto)', previewEl.className = 'preview-placeholder');
-      if (ignoreEmpty && firstLine.trim() === '') return (previewEl.textContent = '(Linha vazia ignorada)', previewEl.className = 'preview-placeholder');
-      if (count === 0) return (previewEl.textContent = firstLine, previewEl.className = '');
-
-      const safeCount = Math.min(count, firstLine.length);
-      const result = dir === 'start' ? firstLine.slice(safeCount) : firstLine.slice(0, -safeCount || undefined);
-      previewEl.textContent = result;
-      previewEl.className = '';
+    const updatePosUI = () => {
+      const isInsert = posMode.value === 'inserir';
+      campoInserir.classList.toggle('hidden', !isInsert);
+      campoExcluir.classList.toggle('hidden', isInsert);
+      btnPos.textContent = isInsert ? 'Aplicar Inserção' : 'Aplicar Exclusão';
+      updatePosPreview();
     };
 
-    // Event Listeners para Prévias
-    ['insert-text', 'insert-pos', 'insert-dir', 'insert-ignore-empty', 'rem-count', 'rem-dir', 'rem-ignore-empty'].forEach(id => {
-      document.getElementById(id).addEventListener('input', id.startsWith('insert') ? updateInsertPreview : updateRemPreview);
-      document.getElementById(id).addEventListener('change', id.startsWith('insert') ? updateInsertPreview : updateRemPreview);
-    });
-    els.editor.addEventListener('input', () => {
-      state.current = els.editor.value;
-      if (!state.original && state.current) state.original = state.current;
-      setStatus(`Editando... (${state.current.split('\n').length} linhas)`);
-      updateInsertPreview();
-      updateRemPreview();
-    });
+    const getEffectiveIdx = (line) => {
+      let idx = parseInt(posIndex.value) || 0;
+      idx = Math.max(0, idx);
+      return posDir.value === 'final' ? Math.max(0, line.length - idx) : Math.min(line.length, idx);
+    };
 
-    // Ações das Ferramentas
-    document.getElementById('btn-find-replace').addEventListener('click', () => {
-      const find = document.getElementById('find-text').value;
-      const replace = document.getElementById('replace-text').value;
-      if (!find) return showToast('Preencha "Localizar".', 'error');
-      const caseSensitive = document.getElementById('find-case').checked;
-      processText(line => caseSensitive ? line.replaceAll(find, replace) : line.replace(new RegExp(escapeRegex(find), 'gi'), replace));
-    });
-
-    document.getElementById('btn-prefix-suffix').addEventListener('click', () => {
-      const prefix = document.getElementById('prefix-text').value;
-      const suffix = document.getElementById('suffix-text').value;
-      if (!prefix && !suffix) return showToast('Preencha prefixo ou sufixo.', 'error');
-      const ignore = document.getElementById('ignore-empty').checked;
-      processText(line => (ignore && line.trim() === '') ? line : `${prefix}${line}${suffix}`);
-    });
-
-    document.getElementById('btn-insert').addEventListener('click', () => {
-      const text = document.getElementById('insert-text').value;
-      const pos = parseInt(document.getElementById('insert-pos').value, 10) || 0;
-      const dir = document.getElementById('insert-dir').value;
-      const ignore = document.getElementById('insert-ignore-empty').checked;
-      processText(line => {
-        if (!text || (ignore && line.trim() === '')) return line;
-        const len = line.length;
-        let idx = dir === 'start' ? Math.min(Math.max(0, pos), len) : Math.min(Math.max(0, len - pos), len);
-        return `${line.slice(0, idx)}${text}${line.slice(idx)}`;
-      });
-    });
-
-    document.getElementById('btn-enumerate').addEventListener('click', () => {
-      let start = parseInt(document.getElementById('enum-start').value, 10) || 1;
-      const digits = parseInt(document.getElementById('enum-digits').value, 10) || 2;
-      const sep = document.getElementById('enum-sep').value;
-      const ignore = document.getElementById('enum-ignore-empty').checked;
+    const updatePosPreview = () => {
+      const raw = editor.value || 'Exemplo de texto para visualização...';
+      const firstLine = raw.split('\n')[0];
+      const idx = getEffectiveIdx(firstLine);
+      let res = firstLine;
       
-      processText(line => {
-        if (ignore && line.trim() === '') return line;
-        const num = String(start++).padStart(digits, '0');
-        return `${num}${sep}${line}`;
-      });
-    });
+      if (posMode.value === 'inserir') {
+        const txt = posText.value;
+        res = firstLine.slice(0, idx) + txt + firstLine.slice(idx);
+      } else {
+        const q = parseInt(posQty.value) || 0;
+        res = firstLine.slice(0, idx) + firstLine.slice(idx + q);
+      }
+      previewPos.textContent = res.length > 70 ? res.slice(0,70)+'...' : res || '(linha vazia)';
+    };
 
-    document.getElementById('btn-remove').addEventListener('click', () => {
-      const count = parseInt(document.getElementById('rem-count').value, 10) || 0;
-      const dir = document.getElementById('rem-dir').value;
-      const ignore = document.getElementById('rem-ignore-empty').checked;
-      if (count < 0) return showToast('Quantidade inválida.', 'error');
+    // Botões rápidos (substituem Prefixo/Sufixo)
+    document.getElementById('presetInicio').onclick = () => {
+      posDir.value = 'inicio'; posIndex.value = 0; updatePosPreview();
+    };
+    document.getElementById('presetFinal').onclick = () => {
+      posDir.value = 'final'; posIndex.value = 0; updatePosPreview();
+    };
+
+    [posMode, posIndex, posDir, posText, posQty].forEach(el => el.addEventListener('input', updatePosPreview));
+    posMode.addEventListener('change', updatePosUI);
+
+    btnPos.onclick = () => {
+      const isInsert = posMode.value === 'inserir';
+      const txt = posText.value;
+      const q = parseInt(posQty.value) || 0;
+      if (isInsert && !txt) return status('Preencha o texto a inserir.');
+      if (!isInsert && q <= 0) return status('Defina quantidade > 0.');
       
-      processText(line => {
+      saveState();
+      const ignore = ignorePos.checked;
+      const newLines = getLines().map(line => {
         if (ignore && line.trim() === '') return line;
-        const safe = Math.min(count, line.length);
-        return dir === 'start' ? line.slice(safe) : line.slice(0, -safe || undefined);
+        const idx = getEffectiveIdx(line);
+        return isInsert ? line.slice(0, idx) + txt + line.slice(idx) : line.slice(0, idx) + line.slice(idx + q);
       });
-    });
+      setLines(newLines);
+      status('Operação aplicada.');
+    };
 
-    // Ações Globais
-    els.btnUndo.addEventListener('click', () => {
-      if (!state.history.length) return;
-      state.current = state.history.pop();
-      els.editor.value = state.current;
-      els.btnUndo.disabled = !state.history.length;
-      setStatus(`↩️ Desfeito. ${state.current.split('\n').length} linhas.`);
-      showToast('Desfeito com sucesso.');
-    });
-    els.btnRestore.addEventListener('click', () => {
-      if (!state.original) return showToast('Nenhum original salvo.', 'error');
-      saveToHistory(); updateEditor(state.original); showToast('Original restaurado.');
-    });
-    els.btnCopy.addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(els.editor.value); showToast('Copiado!'); } 
-      catch { showToast('Falha ao copiar.', 'error'); }
-    });
-    els.btnDownload.addEventListener('click', () => {
-      if (!els.editor.value) return showToast('Nada para baixar.', 'error');
-      const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([els.editor.value], {type:'text/plain'}));
-      a.download = 'texto_editado.txt'; a.click(); showToast('Download iniciado.');
-    });
-    els.btnClear.addEventListener('click', () => {
-      if (!els.editor.value) return; saveToHistory(); state.original = ''; updateEditor(''); showToast('Limpo.');
-    });
-    els.editor.addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && e.key==='z') { e.preventDefault(); els.btnUndo.click(); }});
-
-    // Init
-    els.editor.focus(); updateInsertPreview(); updateRemPreview();
+    // Inicialização
+    updatePosUI();
   </script>
 </body>
 </html>
