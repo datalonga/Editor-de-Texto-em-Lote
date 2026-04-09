@@ -1,284 +1,513 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Editor de Texto em Lote</title>
   <style>
-    :root {
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --border: #e2e8f0;
-      --text: #334155;
-      --text-muted: #64748b;
-      --success: #10b981;
-      --accent: #f1f5f9;
+    [data-theme="dark"] {
+      --bg: #0a0b0f;
+      --bg-surface: #14151b;
+      --bg-panel: #1a1b23;
+      --bg-input: #22232e;
+      --bg-hover: #2a2b38;
+      --border: #33343f;
+      --text: #e6e8ef;
+      --text-muted: #7a7c8b;
+      --accent: #6c5ce7;
+      --accent-hover: #5a4bd6;
+      --accent-glow: rgba(108, 92, 231, 0.15);
+      --success: #00b894;
+      --warning: #fdcb6e;
+      --danger: #e17055;
+      --preview-bg: rgba(0, 184, 148, 0.08);
+      --preview-border: rgba(0, 184, 148, 0.2);
+      --shadow: 0 8px 24px rgba(0,0,0,0.4);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.2);
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
-    body { background: var(--bg); color: var(--text); padding: 20px; line-height: 1.5; }
-    .container { max-width: 920px; margin: 0 auto; }
+    [data-theme="light"] {
+      --bg: #f4f5f7;
+      --bg-surface: #ffffff;
+      --bg-panel: #ffffff;
+      --bg-input: #f0f1f5;
+      --bg-hover: #e8e9ef;
+      --border: #dcdfe5;
+      --text: #1a1b2e;
+      --text-muted: #8a8c9b;
+      --accent: #6c5ce7;
+      --accent-hover: #5a4bd6;
+      --accent-glow: rgba(108, 92, 231, 0.1);
+      --success: #00b894;
+      --warning: #e67e22;
+      --danger: #e74c3c;
+      --preview-bg: rgba(0, 184, 148, 0.06);
+      --preview-border: rgba(0, 184, 148, 0.25);
+      --shadow: 0 8px 24px rgba(0,0,0,0.06);
+      --shadow-sm: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body {
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      min-height: 100vh;
+      transition: background 0.3s ease, color 0.3s ease;
+    }
+
+    .app { max-width: 1440px; margin: 0 auto; padding: 1.25rem; min-height: 100vh; display: flex; flex-direction: column; }
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    .brand { display: flex; align-items: center; gap: 0.75rem; }
+    .brand-icon { width: 32px; height: 32px; }
+    header h1 { font-size: 1.35rem; font-weight: 700; letter-spacing: -0.03em; }
+    header .version { font-size: 0.75rem; color: var(--text-muted); background: var(--bg-input); padding: 0.2rem 0.6rem; border-radius: 12px; }
     
-    header { margin-bottom: 20px; text-align: center; }
-    header h1 { font-size: 1.6rem; margin-bottom: 4px; color: var(--primary); }
-    header p { color: var(--text-muted); font-size: 0.9rem; }
-    
-    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px; }
-    .toolbar button { padding: 8px 14px; border: 1px solid var(--border); background: var(--card); border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: 0.2s; }
-    .toolbar button:hover { background: #f1f5f9; transform: translateY(-1px); }
-    
-    textarea { width: 100%; height: 180px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-family: ui-monospace, SFMono-Regular, monospace; font-size: 14px; resize: vertical; margin-bottom: 20px; transition: border 0.2s; }
-    textarea:focus { outline: none; border-color: var(--primary); }
-    
-    .section { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    .section h3 { margin-bottom: 12px; font-size: 1.1rem; color: var(--text); display: flex; align-items: center; gap: 8px; }
-    
-    .form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; align-items: flex-end; }
-    .form-group { flex: 1; min-width: 130px; }
-    .form-group label { display: block; font-size: 0.85rem; margin-bottom: 4px; font-weight: 500; color: var(--text-muted); }
-    .form-group input, .form-group select { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.9rem; background: #fafafa; }
-    .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary); background: #fff; }
-    
-    .checkbox-group { display: flex; align-items: center; gap: 6px; margin: 10px 0; font-size: 0.9rem; cursor: pointer; }
-    .checkbox-group input { width: 16px; height: 16px; cursor: pointer; }
-    
-    .preview-box { background: var(--accent); padding: 10px; border-radius: 6px; margin: 10px 0; font-family: monospace; font-size: 0.9rem; word-break: break-all; min-height: 38px; display: flex; align-items: center; gap: 6px; border: 1px dashed #cbd5e1; }
-    .preview-box span { color: var(--text-muted); font-size: 0.8rem; white-space: nowrap; }
-    
-    .btn-apply { background: var(--primary); color: white; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; width: 100%; margin-top: 8px; transition: 0.2s; }
-    .btn-apply:hover { background: var(--primary-hover); }
-    
-    .btn-sm { padding: 6px 10px; font-size: 0.85rem; background: #e2e8f0; border: none; border-radius: 6px; cursor: pointer; transition: 0.2s; }
-    .btn-sm:hover { background: #cbd5e1; }
-    
-    .status { text-align: center; margin-top: 8px; font-size: 0.9rem; color: var(--success); min-height: 20px; }
+    .header-actions { display: flex; gap: 0.5rem; }
+    .icon-btn {
+      width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--bg-surface); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s ease; color: var(--text-muted);
+    }
+    .icon-btn:hover { background: var(--bg-hover); color: var(--text); border-color: var(--accent); }
+    .icon-btn svg { width: 18px; height: 18px; }
+
+    .main-grid { display: grid; grid-template-columns: 1fr 360px; gap: 1.5rem; flex: 1; min-height: 0; }
+    @media (max-width: 950px) { .main-grid { grid-template-columns: 1fr; grid-template-rows: auto auto; } }
+
+    /* Editor */
+    .editor-panel {
+      background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem;
+      position: sticky; top: 1.25rem; height: calc(100vh - 140px);
+    }
+    @media (max-width: 950px) { .editor-panel { position: static; height: auto; min-height: 450px; } }
+
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    .tool-btn {
+      background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+      padding: 0.45rem 0.7rem; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+      display: flex; align-items: center; gap: 0.4rem; transition: all 0.2s ease;
+    }
+    .tool-btn:hover { background: var(--bg-hover); border-color: var(--accent); }
+    .tool-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .tool-btn svg { width: 14px; height: 14px; }
+    .tool-btn.danger { color: var(--danger); border-color: rgba(225,112,85,0.3); }
+    .tool-btn.danger:hover { background: rgba(225,112,85,0.1); }
+
+    #editor {
+      flex: 1; width: 100%; background: var(--bg-input); color: var(--text);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;
+      font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+      font-size: 0.85rem; resize: none; line-height: 1.6; min-height: 200px;
+      transition: border-color 0.2s;
+    }
+    #editor:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .status-bar { font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; padding-top: 0.25rem; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
+    .status-dot.processing { background: var(--warning); animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Tools Panel */
+    .tools-panel {
+      display: flex; flex-direction: column; gap: 1rem;
+      overflow-y: auto; padding-right: 0.25rem;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .tools-panel::-webkit-scrollbar { width: 5px; }
+    .tools-panel::-webkit-scrollbar-track { background: transparent; }
+    .tools-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .card {
+      background: var(--bg-panel); border: 1px solid var(--border); border-radius: 12px; padding: 1rem;
+      box-shadow: var(--shadow-sm); transition: background 0.3s ease, border-color 0.3s ease;
+    }
+    .card-header {
+      display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.8rem;
+      font-size: 0.9rem; font-weight: 600; color: var(--text);
+    }
+    .card-header svg { width: 18px; height: 18px; color: var(--accent); flex-shrink: 0; }
+
+    .field { margin-bottom: 0.7rem; }
+    .field label { display: block; font-size: 0.72rem; color: var(--text-muted); margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .field input, .field select {
+      width: 100%; background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text); padding: 0.5rem 0.6rem; border-radius: 8px; font-size: 0.85rem;
+      transition: all 0.2s ease;
+    }
+    .field input:focus, .field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+
+    .row { display: flex; gap: 0.5rem; }
+    .row > * { flex: 1; }
+
+    /* Mode Toggle */
+    .mode-toggle {
+      display: flex; background: var(--bg-input); border-radius: 8px; padding: 3px; margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+    }
+    .mode-opt {
+      flex: 1; padding: 0.45rem; text-align: center; border-radius: 6px; cursor: pointer;
+      font-size: 0.8rem; font-weight: 500; color: var(--text-muted); transition: all 0.2s ease;
+      user-select: none;
+    }
+    .mode-opt.active { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
+
+    /* Preset Buttons */
+    .presets { display: flex; gap: 0.4rem; margin-bottom: 0.7rem; }
+    .preset-btn {
+      flex: 1; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-muted);
+      padding: 0.35rem; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-weight: 500;
+      transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.3rem;
+    }
+    .preset-btn:hover { background: var(--accent-glow); color: var(--accent); border-color: var(--accent); }
+    .preset-btn svg { width: 12px; height: 12px; }
+
+    .checkbox { display: flex; align-items: center; gap: 0.4rem; font-size: 0.8rem; color: var(--text-muted); cursor: pointer; margin: 0.5rem 0; }
+    .checkbox input { accent-color: var(--accent); width: 14px; height: 14px; cursor: pointer; }
+
+    /* Preview */
+    .preview {
+      margin-top: 0.6rem; padding: 0.55rem 0.7rem; background: var(--preview-bg);
+      border: 1px solid var(--preview-border); border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem;
+      color: var(--success); word-break: break-all; min-height: 2.2rem;
+      transition: all 0.3s ease;
+    }
+    .preview-label { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; display: block; }
+    .preview.empty { color: var(--text-muted); font-style: italic; }
+
+    .apply-btn {
+      width: 100%; background: var(--accent); color: #fff; border: none; padding: 0.6rem;
+      border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.85rem;
+      margin-top: 0.5rem; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+    }
+    .apply-btn:hover { background: var(--accent-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(108, 92, 231, 0.3); }
+    .apply-btn:active { transform: translateY(0); }
+    .apply-btn svg { width: 16px; height: 16px; }
+
+    /* Toast */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px; background: var(--bg-surface);
+      border: 1px solid var(--border); color: var(--text); padding: 0.75rem 1rem;
+      border-radius: 10px; box-shadow: var(--shadow); transform: translateY(12px); opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 9999; font-size: 0.82rem;
+      max-width: 320px; backdrop-filter: blur(8px);
+    }
+    #toast.show { transform: translateY(0); opacity: 1; }
+    #toast.success { border-left: 3px solid var(--success); }
+    #toast.error { border-left: 3px solid var(--danger); }
+
     .hidden { display: none !important; }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div class="app">
     <header>
-      <h1>Editor de Texto em Lote</h1>
-      <p>v1.3 • Processamento local • 100% offline</p>
+      <div class="brand">
+        <svg class="brand-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/>
+          <path d="m15 5 4 4"/>
+        </svg>
+        <h1>Editor de Texto</h1>
+        <span class="version">v2.0</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeToggle" aria-label="Alternar tema">
+          <svg id="sunIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+          <svg id="moonIcon" class="hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/>
+          </svg>
+        </button>
+      </div>
     </header>
 
-    <div class="toolbar">
-      <button id="btnUndo">↩️ Desfazer</button>
-      <button id="btnRestore">🔄 Restaurar Original</button>
-      <button id="btnCopy">📋 Copiar Resultado</button>
-      <button id="btnDownload">💾 Baixar .txt</button>
-      <button id="btnClear">🗑️ Limpar</button>
-    </div>
-
-    <textarea id="editor" placeholder="Pronto. Digite ou cole um texto para começar."></textarea>
-    <div id="statusMsg" class="status"></div>
-
-    <!-- 🔍 Localizar & Substituir -->
-    <div class="section" id="secFindReplace">
-      <h3>🔍 Localizar & Substituir</h3>
-      <div class="form-row">
-        <div class="form-group"><label>Localizar</label><input type="text" id="findText" placeholder="Ex: antigo"></div>
-        <div class="form-group"><label>Substituir por</label><input type="text" id="replaceText" placeholder="Ex: novo"></div>
-      </div>
-      <label class="checkbox-group"><input type="checkbox" id="caseSensitive"> Diferenciar maiúsculas/minúsculas</label>
-      <button class="btn-apply" id="btnApplyFindReplace">Aplicar Substituição</button>
-    </div>
-
-    <!-- 📍 Inserção & Exclusão UNIFICADA (Substitui Prefixo/Sufixo + Inserção/Exclusão) -->
-    <div class="section" id="secPosManip">
-      <h3>📍 Inserção & Exclusão de Caracteres</h3>
-      <div class="form-row">
-        <div class="form-group">
-          <label>Modo:</label>
-          <select id="posMode">
-            <option value="inserir">Inserir Texto</option>
-            <option value="excluir">Excluir Caracteres</option>
-          </select>
+    <main class="main-grid">
+      <!-- Editor (Esquerda / Fixo) -->
+      <section class="editor-panel">
+        <div class="toolbar">
+          <button class="tool-btn" id="btn-undo" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+            Desfazer
+          </button>
+          <button class="tool-btn" id="btn-restore">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            Original
+          </button>
+          <button class="tool-btn" id="btn-copy">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h12"/></svg>
+            Copiar
+          </button>
+          <button class="tool-btn" id="btn-download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+            Baixar
+          </button>
+          <button class="tool-btn danger" id="btn-clear" style="margin-left: auto;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+          </button>
         </div>
-        <div class="form-group">
-          <label>Posição:</label>
-          <input type="number" id="posIndex" min="0" value="0" placeholder="0">
+        <textarea id="editor" placeholder="Cole ou digite seu texto aqui...&#10;Cada linha será processada individualmente."></textarea>
+        <div class="status-bar">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Pronto. Cole ou digite um texto para começar.</span>
         </div>
-        <div class="form-group">
-          <label>Direção:</label>
-          <select id="posDir">
-            <option value="inicio">Do início</option>
-            <option value="final">Do final</option>
-          </select>
+      </section>
+
+      <!-- Tools (Direita / Rolável) -->
+      <section class="tools-panel">
+        <!-- Localizar & Substituir -->
+        <div class="card">
+          <div class="card-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+            Localizar & Substituir
+          </div>
+          <div class="field"><label>Localizar</label><input type="text" id="find-text" placeholder="Texto atual..."></div>
+          <div class="field"><label>Substituir por</label><input type="text" id="replace-text" placeholder="Novo texto..."></div>
+          <label class="checkbox"><input type="checkbox" id="find-case"> Diferenciar maiúsculas/minúsculas</label>
+          <button class="apply-btn" id="btn-find-replace">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 10 4 15 9 20"/><path d="M20 4v7a4 4 0 0 1-4 4H4"/></svg>
+            Aplicar
+          </button>
         </div>
-      </div>
 
-      <div class="form-row" style="justify-content: flex-start; gap: 8px; margin-bottom: 10px;">
-        <button type="button" id="presetInicio" class="btn-sm">📌 Modo Início (Pos 0)</button>
-        <button type="button" id="presetFinal" class="btn-sm">📌 Modo Final (Pos 0)</button>
-      </div>
+        <!-- Modo Inserir/Excluir -->
+        <div class="card">
+          <div class="card-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            Transformar Texto
+          </div>
+          
+          <div class="mode-toggle">
+            <div class="mode-opt active" data-mode="insert">Inserir Texto</div>
+            <div class="mode-opt" data-mode="delete">Excluir Caracteres</div>
+          </div>
 
-      <div id="campoTextoInserir" class="form-group">
-        <label>Texto a Inserir:</label>
-        <input type="text" id="posText" placeholder="Digite o texto...">
-      </div>
-      <div id="campoQtdExcluir" class="form-group hidden">
-        <label>Qtd. Caracteres:</label>
-        <input type="number" id="posQty" min="1" value="1" placeholder="1">
-      </div>
+          <div class="row" style="margin-bottom: 0.5rem;">
+            <div class="field" style="margin-bottom:0"><label>Posição</label><input type="number" id="tf-pos" value="2" min="0"></div>
+            <div class="field" style="margin-bottom:0"><label>Direção</label>
+              <select id="tf-dir"><option value="end">Do final</option><option value="start" selected>Do início</option></select>
+            </div>
+          </div>
+          <div class="presets">
+            <button class="preset-btn" data-preset="start0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5-5"/><path d="M6 17l5-5-5-5"/></svg>
+              Modo Início Pos 0
+            </button>
+            <button class="preset-btn" data-preset="end0">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10"/><path d="m7 17 10-10"/></svg>
+              Modo Final Pos 0
+            </button>
+          </div>
 
-      <label class="checkbox-group"><input type="checkbox" id="ignoreEmptyPos"> Ignorar linhas vazias</label>
-      
-      <div class="preview-box">
-        <span>Prévia (1ª linha):</span> <span id="previewPos">Aguardando alterações...</span>
-      </div>
-      <button class="btn-apply" id="btnApplyPos">Aplicar Inserção</button>
-    </div>
+          <div id="tf-insert-field" class="field"><label>Texto a Inserir</label><input type="text" id="tf-insert-text" placeholder="Ex: 0, -, prefixo..."></div>
+          <div id="tf-delete-field" class="field hidden"><label>Qtd. Caracteres</label><input type="number" id="tf-del-count" value="1" min="0"></div>
 
-    <!-- 🔢 Enumerador de Linhas -->
-    <div class="section" id="secEnum">
-      <h3>🔢 Enumerador de Linhas</h3>
-      <div class="form-row">
-        <div class="form-group"><label>Iniciar em</label><input type="number" id="enumStart" value="1"></div>
-        <div class="form-group"><label>Dígitos (casas)</label><input type="number" id="enumDigits" min="1" max="6" value="2"></div>
-        <div class="form-group"><label>Separador</label><input type="text" id="enumSep" value=". "></div>
-      </div>
-      <label class="checkbox-group"><input type="checkbox" id="ignoreEmptyEnum"> Ignorar linhas vazias</label>
-      <button class="btn-apply" id="btnApplyEnum">Aplicar Enumeração</button>
-    </div>
+          <label class="checkbox"><input type="checkbox" id="tf-ignore-empty" checked> Ignorar linhas vazias</label>
+
+          <div class="preview" id="tf-preview-box">
+            <span class="preview-label">Prévia (1ª linha):</span>
+            <span id="tf-preview" class="empty">Aguardando texto ou alterações...</span>
+          </div>
+
+          <button class="apply-btn" id="btn-transform">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 14 10 14 10 20"/><polyline points="20 10 14 10 14 4"/><line x1="14" x2="21" y1="10" y2="3"/><line x1="3" x2="10" y1="21" y2="14"/></svg>
+            Aplicar Transformação
+          </button>
+        </div>
+
+        <!-- Enumerador -->
+        <div class="card">
+          <div class="card-header">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 12h1v4"/><path d="M4 18h1v4"/></svg>
+            Enumerador de Linhas
+          </div>
+          <div class="row" style="margin-bottom:0.5rem;">
+            <div class="field" style="margin-bottom:0"><label>Iniciar em</label><input type="number" id="enum-start" value="1" min="1"></div>
+            <div class="field" style="margin-bottom:0"><label>Dígitos (casas)</label><input type="number" id="enum-digits" value="2" min="1" max="10"></div>
+          </div>
+          <div class="field"><label>Separador</label><input type="text" id="enum-sep" value=" - " placeholder="Ex: .  ou ) "></div>
+          <label class="checkbox"><input type="checkbox" id="enum-ignore" checked> Ignorar linhas vazias</label>
+          <button class="apply-btn" id="btn-enumerate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2Z"/><path d="m13 8 2-2 2 2"/><path d="M15 6v10"/></svg>
+            Numerar Linhas
+          </button>
+        </div>
+      </section>
+    </main>
   </div>
 
+  <div id="toast"></div>
+
   <script>
-    // 📦 Estado & Utilitários
-    const editor = document.getElementById('editor');
-    const statusMsg = document.getElementById('statusMsg');
-    let originalText = '';
-    let history = [];
-    const MAX_HISTORY = 25;
-
-    const saveState = () => {
-      if (editor.value !== originalText) {
-        history.push(editor.value);
-        if (history.length > MAX_HISTORY) history.shift();
-      }
+    // State
+    const state = { original: '', current: '', history: [], maxHistory: 20 };
+    const els = {
+      editor: document.getElementById('editor'), statusText: document.getElementById('status-text'),
+      statusDot: document.getElementById('status-dot'), toast: document.getElementById('toast'),
+      btnUndo: document.getElementById('btn-undo')
     };
 
-    const status = (msg) => { statusMsg.textContent = msg; setTimeout(() => statusMsg.textContent = '', 2500); };
-    const getLines = () => editor.value.split('\n');
-    const setLines = (arr) => editor.value = arr.join('\n');
+    // Utils
+    const escapeRegex = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const showToast = (msg, type='success') => { els.toast.textContent = msg; els.toast.className = `show ${type}`; setTimeout(()=>els.toast.className='', 3500); };
+    const setStatus = (msg, busy=false) => { els.statusText.textContent = msg; els.statusDot.className = `status-dot${busy?' processing':''}`; };
+    const getFirstLine = () => els.editor.value.split('\n')[0]?.replace(/\r$/,'') || '';
 
-    // 🛠️ Botões da Toolbar
-    document.getElementById('btnRestore').onclick = () => { editor.value = originalText; history = []; status('Texto original restaurado.'); };
-    document.getElementById('btnClear').onclick = () => { editor.value = ''; originalText = ''; history = []; status('Editor limpo.'); };
-    document.getElementById('btnCopy').onclick = () => { navigator.clipboard.writeText(editor.value).then(() => status('Copiado!')); };
-    document.getElementById('btnDownload').onclick = () => {
-      const blob = new Blob([editor.value], {type: 'text/plain'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'processado.txt';
-      a.click();
-    };
-    document.getElementById('btnUndo').onclick = () => {
-      if (history.length > 0) { editor.value = history.pop(); status('Ação desfeita.'); }
-    };
-    editor.addEventListener('input', () => { if (!originalText) originalText = editor.value; });
+    // Theme
+    const html = document.documentElement;
+    const themeBtn = document.getElementById('themeToggle');
+    const sunIcon = document.getElementById('sunIcon');
+    const moonIcon = document.getElementById('moonIcon');
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    html.setAttribute('data-theme', savedTheme);
+    updateThemeIcons(savedTheme);
 
-    // 🔍 Localizar & Substituir
-    document.getElementById('btnApplyFindReplace').onclick = () => {
-      const find = document.getElementById('findText').value;
-      if (!find) return status('Preencha "Localizar".');
-      const replace = document.getElementById('replaceText').value;
-      const caseSensitive = document.getElementById('caseSensitive').checked;
-      const regex = new RegExp(find.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), caseSensitive ? 'g' : 'gi');
-      saveState();
-      setLines(getLines().map(l => l.replace(regex, replace)));
-      status('Substituição aplicada.');
-    };
+    themeBtn.addEventListener('click', () => {
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      updateThemeIcons(next);
+    });
+    function updateThemeIcons(theme) {
+      if (theme === 'dark') { sunIcon.classList.remove('hidden'); moonIcon.classList.add('hidden'); }
+      else { moonIcon.classList.remove('hidden'); sunIcon.classList.add('hidden'); }
+    }
 
-    // 🔢 Enumerador
-    document.getElementById('btnApplyEnum').onclick = () => {
-      const start = parseInt(document.getElementById('enumStart').value) || 1;
-      const digits = parseInt(document.getElementById('enumDigits').value) || 2;
-      const sep = document.getElementById('enumSep').value;
-      const ignore = document.getElementById('ignoreEmptyEnum').checked;
-      let counter = start;
-      saveState();
-      setLines(getLines().map(l => {
-        if (ignore && l.trim() === '') return l;
-        return counter.toString().padStart(digits, '0') + sep + (counter++ ? l : '');
-      }));
-      status('Enumeração aplicada.');
+    // History & Editor
+    const saveHistory = () => { state.history.push(state.current); if(state.history.length>state.maxHistory) state.history.shift(); els.btnUndo.disabled=false; };
+    const updateEditor = text => { state.current=text; els.editor.value=text; setStatus(`${text.split('\n').length} linhas no texto.`); updatePreview(); };
+    const processText = fn => {
+      const input = els.editor.value;
+      if(!input) return showToast('Nenhum texto para processar.', 'error');
+      if(input.length > 500000) showToast('Texto grande. Processando...', 'success');
+      setStatus('Processando...', true);
+      setTimeout(()=>{
+        saveHistory(); let changed=0;
+        const res = input.split('\n').map(line => { const b=line; const a=fn(line); if(b!==a)changed++; return a; });
+        updateEditor(res.join('\n'));
+        setStatus(`✅ ${changed} linha(s) modificada(s).`); showToast(`${changed} linha(s) alterada(s).`);
+      }, 10);
     };
 
-    // 📍 Inserção & Exclusão UNIFICADA
-    const posMode = document.getElementById('posMode');
-    const posIndex = document.getElementById('posIndex');
-    const posDir = document.getElementById('posDir');
-    const posText = document.getElementById('posText');
-    const posQty = document.getElementById('posQty');
-    const campoInserir = document.getElementById('campoTextoInserir');
-    const campoExcluir = document.getElementById('campoQtdExcluir');
-    const btnPos = document.getElementById('btnApplyPos');
-    const previewPos = document.getElementById('previewPos');
-    const ignorePos = document.getElementById('ignoreEmptyPos');
-
-    const updatePosUI = () => {
-      const isInsert = posMode.value === 'inserir';
-      campoInserir.classList.toggle('hidden', !isInsert);
-      campoExcluir.classList.toggle('hidden', isInsert);
-      btnPos.textContent = isInsert ? 'Aplicar Inserção' : 'Aplicar Exclusão';
-      updatePosPreview();
-    };
-
-    const getEffectiveIdx = (line) => {
-      let idx = parseInt(posIndex.value) || 0;
-      idx = Math.max(0, idx);
-      return posDir.value === 'final' ? Math.max(0, line.length - idx) : Math.min(line.length, idx);
-    };
-
-    const updatePosPreview = () => {
-      const raw = editor.value || 'Exemplo de texto para visualização...';
-      const firstLine = raw.split('\n')[0];
-      const idx = getEffectiveIdx(firstLine);
-      let res = firstLine;
-      
-      if (posMode.value === 'inserir') {
-        const txt = posText.value;
-        res = firstLine.slice(0, idx) + txt + firstLine.slice(idx);
-      } else {
-        const q = parseInt(posQty.value) || 0;
-        res = firstLine.slice(0, idx) + firstLine.slice(idx + q);
-      }
-      previewPos.textContent = res.length > 70 ? res.slice(0,70)+'...' : res || '(linha vazia)';
-    };
-
-    // Botões rápidos (substituem Prefixo/Sufixo)
-    document.getElementById('presetInicio').onclick = () => {
-      posDir.value = 'inicio'; posIndex.value = 0; updatePosPreview();
-    };
-    document.getElementById('presetFinal').onclick = () => {
-      posDir.value = 'final'; posIndex.value = 0; updatePosPreview();
-    };
-
-    [posMode, posIndex, posDir, posText, posQty].forEach(el => el.addEventListener('input', updatePosPreview));
-    posMode.addEventListener('change', updatePosUI);
-
-    btnPos.onclick = () => {
-      const isInsert = posMode.value === 'inserir';
-      const txt = posText.value;
-      const q = parseInt(posQty.value) || 0;
-      if (isInsert && !txt) return status('Preencha o texto a inserir.');
-      if (!isInsert && q <= 0) return status('Defina quantidade > 0.');
-      
-      saveState();
-      const ignore = ignorePos.checked;
-      const newLines = getLines().map(line => {
-        if (ignore && line.trim() === '') return line;
-        const idx = getEffectiveIdx(line);
-        return isInsert ? line.slice(0, idx) + txt + line.slice(idx) : line.slice(0, idx) + line.slice(idx + q);
+    // Mode Toggle
+    const modeOpts = document.querySelectorAll('.mode-opt');
+    let currentMode = 'insert';
+    modeOpts.forEach(opt => {
+      opt.addEventListener('click', () => {
+        currentMode = opt.dataset.mode;
+        modeOpts.forEach(o=>o.classList.remove('active'));
+        opt.classList.add('active');
+        document.getElementById('tf-insert-field').classList.toggle('hidden', currentMode!=='insert');
+        document.getElementById('tf-delete-field').classList.toggle('hidden', currentMode!=='delete');
+        updatePreview();
       });
-      setLines(newLines);
-      status('Operação aplicada.');
+    });
+
+    // Presets
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const preset = btn.dataset.preset;
+        const dirEl = document.getElementById('tf-dir');
+        const posEl = document.getElementById('tf-pos');
+        if(preset==='start0') { dirEl.value='start'; posEl.value=0; }
+        else { dirEl.value='end'; posEl.value=0; }
+        updatePreview();
+      });
+    });
+
+    // Preview Logic
+    const updatePreview = () => {
+      const line = getFirstLine();
+      const prev = document.getElementById('tf-preview');
+      if(!line) return (prev.textContent='(Nenhum texto)', prev.className='empty');
+      const ignore = document.getElementById('tf-ignore-empty').checked;
+      if(ignore && line.trim()==='') return (prev.textContent='(Linha vazia ignorada)', prev.className='empty');
+      
+      if(currentMode==='insert') {
+        const text = document.getElementById('tf-insert-text').value;
+        if(!text) return (prev.textContent=line, prev.className='');
+        const pos = Math.max(0, parseInt(document.getElementById('tf-pos').value)||0);
+        const dir = document.getElementById('tf-dir').value;
+        const len = line.length;
+        const idx = dir==='start' ? Math.min(pos, len) : Math.min(Math.max(0, len-pos), len);
+        prev.textContent = `${line.slice(0,idx)}${text}${line.slice(idx)}`;
+      } else {
+        const count = Math.max(0, parseInt(document.getElementById('tf-del-count').value)||0);
+        if(count===0) return (prev.textContent=line, prev.className='');
+        const dir = document.getElementById('tf-dir').value;
+        const safe = Math.min(count, line.length);
+        prev.textContent = dir==='start' ? line.slice(safe) : line.slice(0, -safe || undefined);
+      }
+      prev.className = '';
     };
 
-    // Inicialização
-    updatePosUI();
+    // Preview Listeners
+    ['tf-pos','tf-dir','tf-insert-text','tf-del-count','tf-ignore-empty'].forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', updatePreview); el.addEventListener('change', updatePreview);
+    });
+    els.editor.addEventListener('input', () => {
+      state.current = els.editor.value;
+      if(!state.original && state.current) state.original = state.current;
+      setStatus(`${state.current.split('\n').length} linhas.`); updatePreview();
+    });
+
+    // Transform Action
+    document.getElementById('btn-transform').addEventListener('click', () => {
+      const pos = Math.max(0, parseInt(document.getElementById('tf-pos').value)||0);
+      const dir = document.getElementById('tf-dir').value;
+      const ignore = document.getElementById('tf-ignore-empty').checked;
+      processText(line => {
+        if(ignore && line.trim()==='') return line;
+        if(currentMode==='insert') {
+          const text = document.getElementById('tf-insert-text').value;
+          if(!text) return line;
+          const len=line.length;
+          const idx = dir==='start' ? Math.min(pos,len) : Math.min(Math.max(0,len-pos),len);
+          return `${line.slice(0,idx)}${text}${line.slice(idx)}`;
+        } else {
+          const count = Math.max(0, parseInt(document.getElementById('tf-del-count').value)||0);
+          const safe = Math.min(count, line.length);
+          return dir==='start' ? line.slice(safe) : line.slice(0, -safe||undefined);
+        }
+      });
+    });
+
+    // Find & Replace
+    document.getElementById('btn-find-replace').addEventListener('click', () => {
+      const f = document.getElementById('find-text').value;
+      const r = document.getElementById('replace-text').value;
+      if(!f) return showToast('Preencha "Localizar".','error');
+      const cs = document.getElementById('find-case').checked;
+      processText(line => cs ? line.replaceAll(f,r) : line.replace(new RegExp(escapeRegex(f),'gi'),r));
+    });
+
+    // Enumerate
+    document.getElementById('btn-enumerate').addEventListener('click', () => {
+      let start = parseInt(document.getElementById('enum-start').value)||1;
+      const dig = Math.min(10, Math.max(1, parseInt(document.getElementById('enum-digits').value)||2));
+      const sep = document.getElementById('enum-sep').value;
+      const ign = document.getElementById('enum-ignore').checked;
+      processText(line => { if(ign && line.trim()==='') return line; return `${String(start++).padStart(dig,'0')}${sep}${line}`; });
+    });
+
+    // Global Actions
+    els.btnUndo.addEventListener('click', () => { if(!state.history.length) return; state.current=state.history.pop(); els.editor.value=state.current; els.btnUndo.disabled=!state.history.length; setStatus(`↩️ ${state.current.split('\n').length} linhas.`); showToast('Desfeito.'); });
+    document.getElementById('btn-restore').addEventListener('click', () => { if(!state.original) return showToast('Nenhum original.','error'); saveHistory(); updateEditor(state.original); showToast('Original restaurado.'); });
+    document.getElementById('btn-copy').addEventListener('click', async () => { try { await navigator.clipboard.writeText(els.editor.value); showToast('Copiado!'); } catch { showToast('Falha.','error'); } });
+    document.getElementById('btn-download').addEventListener('click', () => { if(!els.editor.value) return showToast('Nada para baixar.','error'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([els.editor.value],{type:'text/plain'})); a.download='texto_editado.txt'; a.click(); showToast('Download iniciado.'); });
+    document.getElementById('btn-clear').addEventListener('click', () => { if(!els.editor.value) return; saveHistory(); state.original=''; updateEditor(''); showToast('Limpo.'); });
+    els.editor.addEventListener('keydown', e => { if((e.ctrlKey||e.metaKey)&&e.key==='z'){e.preventDefault();els.btnUndo.click();}});
+
+    // Init
+    els.editor.focus(); updatePreview();
   </script>
 </body>
 </html>
