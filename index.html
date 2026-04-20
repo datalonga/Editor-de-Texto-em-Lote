@@ -151,9 +151,9 @@
       border: 1px solid var(--border);
     }
     .mode-opt {
-      flex: 1; padding: 0.45rem; text-align: center; border-radius: 6px; cursor: pointer;
-      font-size: 0.8rem; font-weight: 500; color: var(--text-muted); transition: all 0.2s ease;
-      user-select: none;
+      flex: 1; padding: 0.4rem 0.2rem; text-align: center; border-radius: 6px; cursor: pointer;
+      font-size: 0.75rem; font-weight: 500; color: var(--text-muted); transition: all 0.2s ease;
+      user-select: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
     .mode-opt.active { background: var(--accent); color: #fff; box-shadow: var(--shadow-sm); }
 
@@ -214,7 +214,7 @@
           <path d="m15 5 4 4"/>
         </svg>
         <h1>Editor de Texto</h1>
-        <span class="version">v2.1</span>
+        <span class="version">v2.2</span>
       </div>
       <div class="header-actions">
         <button class="icon-btn" id="themeToggle" aria-label="Alternar tema">
@@ -229,7 +229,6 @@
     </header>
 
     <main class="main-grid">
-      <!-- Editor (Esquerda / Fixo) -->
       <section class="editor-panel">
         <div class="toolbar">
           <button class="tool-btn" id="btn-undo" disabled>
@@ -259,9 +258,8 @@
         </div>
       </section>
 
-      <!-- Tools (Direita / Rolável) -->
       <section class="tools-panel">
-        <!-- Localizar & Substituir -->
+        
         <div class="card">
           <div class="card-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
@@ -276,7 +274,6 @@
           </button>
         </div>
 
-        <!-- Modo Inserir/Excluir -->
         <div class="card">
           <div class="card-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.85 0 0 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
@@ -284,29 +281,53 @@
           </div>
           
           <div class="mode-toggle">
-            <div class="mode-opt active" data-mode="insert">Inserir Texto</div>
-            <div class="mode-opt" data-mode="delete">Excluir Caracteres</div>
+            <div class="mode-opt active" data-mode="insert">Inserir</div>
+            <div class="mode-opt" data-mode="delete">Excluir Qtd</div>
+            <div class="mode-opt" data-mode="truncate">Excluir por Texto</div>
           </div>
 
-          <div class="row" style="margin-bottom: 0.5rem;">
-            <div class="field" style="margin-bottom:0"><label>Posição</label><input type="number" id="tf-pos" value="0" min="0"></div>
-            <div class="field" style="margin-bottom:0"><label>Direção</label>
-              <select id="tf-dir"><option value="end">Do final</option><option value="start" selected>Do início</option></select>
+          <div id="tf-pos-container">
+            <div class="row" style="margin-bottom: 0.5rem;">
+              <div class="field" style="margin-bottom:0"><label>Posição</label><input type="number" id="tf-pos" value="0" min="0"></div>
+              <div class="field" style="margin-bottom:0"><label>Direção</label>
+                <select id="tf-dir"><option value="end">Do final</option><option value="start" selected>Do início</option></select>
+              </div>
             </div>
-          </div>
-          <div class="presets">
-            <button class="preset-btn" data-preset="start0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5"/><path d="M6 17l5-5-5"/></svg>
-              Modo Início Pos 0
-            </button>
-            <button class="preset-btn" data-preset="end0">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10"/><path d="m7 17 10-10"/></svg>
-              Modo Final Pos 0
-            </button>
+            <div class="presets">
+              <button class="preset-btn" data-preset="start0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 17l5-5-5"/><path d="M6 17l5-5-5"/></svg>
+                Modo Início
+              </button>
+              <button class="preset-btn" data-preset="end0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 7 10 10"/><path d="m7 17 10-10"/></svg>
+                Modo Final
+              </button>
+            </div>
           </div>
 
           <div id="tf-insert-field" class="field"><label>Texto a Inserir</label><input type="text" id="tf-insert-text" placeholder="Ex: 0, -, prefixo..."></div>
           <div id="tf-delete-field" class="field hidden"><label>Qtd. Caracteres</label><input type="number" id="tf-del-count" value="1" min="0"></div>
+          
+          <div id="tf-truncate-field" class="hidden">
+            <div class="field">
+              <label>Marcador Base (Referência)</label>
+              <input type="text" id="tf-trunc-mark" placeholder="Ex: xxx">
+            </div>
+            <div class="field">
+              <label>Ação a realizar</label>
+              <select id="tf-trunc-action">
+                <option value="del_exact_before" selected>Excluir texto exato ANTES do marcador</option>
+                <option value="del_exact_after">Excluir texto exato DEPOIS do marcador</option>
+                <option value="del_all_before">Excluir TUDO que vem antes do marcador</option>
+                <option value="del_all_after">Excluir TUDO que vem depois do marcador</option>
+              </select>
+            </div>
+            <div class="field" id="tf-trunc-exact-box">
+              <label>Texto exato a excluir</label>
+              <input type="text" id="tf-trunc-exact" placeholder="Ex: min">
+            </div>
+            <label class="checkbox"><input type="checkbox" id="tf-trunc-incl"> Excluir também o marcador</label>
+          </div>
 
           <label class="checkbox"><input type="checkbox" id="tf-ignore-empty" checked> Ignorar linhas vazias</label>
 
@@ -321,7 +342,6 @@
           </button>
         </div>
 
-        <!-- Enumerador -->
         <div class="card">
           <div class="card-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 12h1v4"/><path d="M4 18h1v4"/></svg>
@@ -339,7 +359,6 @@
           </button>
         </div>
 
-        <!-- Excluir Linhas por Texto (NOVO) -->
         <div class="card">
           <div class="card-header">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
@@ -347,6 +366,7 @@
           </div>
           <div class="field"><label>Texto para buscar</label><input type="text" id="exclude-text" placeholder="Ex: erro, null, @..."></div>
           <label class="checkbox"><input type="checkbox" id="exclude-case"> Diferenciar maiúsculas/minúsculas</label>
+          <label class="checkbox"><input type="checkbox" id="exclude-invert"> Excluir linhas que <b>NÃO</b> contêm (Manter correspondências)</label>
           <button class="apply-btn" id="btn-exclude-lines">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
             Excluir Linhas
@@ -418,10 +438,21 @@
         currentMode = opt.dataset.mode;
         modeOpts.forEach(o=>o.classList.remove('active'));
         opt.classList.add('active');
-        document.getElementById('tf-insert-field').classList.toggle('hidden', currentMode!=='insert');
-        document.getElementById('tf-delete-field').classList.toggle('hidden', currentMode!=='delete');
+        
+        const isPosMode = currentMode === 'insert' || currentMode === 'delete';
+        document.getElementById('tf-pos-container').classList.toggle('hidden', !isPosMode);
+        document.getElementById('tf-insert-field').classList.toggle('hidden', currentMode !== 'insert');
+        document.getElementById('tf-delete-field').classList.toggle('hidden', currentMode !== 'delete');
+        document.getElementById('tf-truncate-field').classList.toggle('hidden', currentMode !== 'truncate');
+        
         updatePreview();
       });
+    });
+
+    // Toggle para a caixa de "Texto exato" dentro de Truncate
+    document.getElementById('tf-trunc-action').addEventListener('change', (e) => {
+      const isExact = e.target.value.includes('exact');
+      document.getElementById('tf-trunc-exact-box').classList.toggle('hidden', !isExact);
     });
 
     // Presets
@@ -436,6 +467,51 @@
       });
     });
 
+    // Função central que aplica a lógica de Transformar Texto
+    const transformLineLogic = (line) => {
+      if(currentMode==='insert') {
+        const text = document.getElementById('tf-insert-text').value;
+        if(!text) return line;
+        const pos = Math.max(0, parseInt(document.getElementById('tf-pos').value)||0);
+        const dir = document.getElementById('tf-dir').value;
+        const len = line.length;
+        const idx = dir==='start' ? Math.min(pos, len) : Math.min(Math.max(0, len-pos), len);
+        return `${line.slice(0,idx)}${text}${line.slice(idx)}`;
+      } 
+      else if(currentMode==='delete') {
+        const count = Math.max(0, parseInt(document.getElementById('tf-del-count').value)||0);
+        if(count===0) return line;
+        const dir = document.getElementById('tf-dir').value;
+        const safe = Math.min(count, line.length);
+        return dir==='start' ? line.slice(safe) : line.slice(0, -safe || undefined);
+      } 
+      else if(currentMode==='truncate') {
+        const mark = document.getElementById('tf-trunc-mark').value;
+        if(!mark) return line;
+        const action = document.getElementById('tf-trunc-action').value;
+        const incl = document.getElementById('tf-trunc-incl').checked;
+        const exact = document.getElementById('tf-trunc-exact').value;
+
+        const idx = line.indexOf(mark);
+        if(idx === -1) return line;
+
+        if(action === 'del_all_before') {
+          return incl ? line.slice(idx + mark.length) : line.slice(idx);
+        } else if(action === 'del_all_after') {
+          return incl ? line.slice(0, idx) : line.slice(0, idx + mark.length);
+        } else if(action === 'del_exact_before') {
+          if(!exact) return line;
+          const regex = new RegExp(escapeRegex(exact) + escapeRegex(mark), 'g');
+          return line.replace(regex, incl ? '' : mark);
+        } else if(action === 'del_exact_after') {
+          if(!exact) return line;
+          const regex = new RegExp(escapeRegex(mark) + escapeRegex(exact), 'g');
+          return line.replace(regex, incl ? '' : mark);
+        }
+      }
+      return line;
+    };
+
     // Preview Logic
     const updatePreview = () => {
       const line = getFirstLine();
@@ -444,29 +520,21 @@
       const ignore = document.getElementById('tf-ignore-empty').checked;
       if(ignore && line.trim()==='') return (prev.textContent='(Linha vazia ignorada)', prev.className='empty');
       
-      if(currentMode==='insert') {
-        const text = document.getElementById('tf-insert-text').value;
-        if(!text) return (prev.textContent=line, prev.className='');
-        const pos = Math.max(0, parseInt(document.getElementById('tf-pos').value)||0);
-        const dir = document.getElementById('tf-dir').value;
-        const len = line.length;
-        const idx = dir==='start' ? Math.min(pos, len) : Math.min(Math.max(0, len-pos), len);
-        prev.textContent = `${line.slice(0,idx)}${text}${line.slice(idx)}`;
-      } else {
-        const count = Math.max(0, parseInt(document.getElementById('tf-del-count').value)||0);
-        if(count===0) return (prev.textContent=line, prev.className='');
-        const dir = document.getElementById('tf-dir').value;
-        const safe = Math.min(count, line.length);
-        prev.textContent = dir==='start' ? line.slice(safe) : line.slice(0, -safe || undefined);
-      }
+      const result = transformLineLogic(line);
+      prev.textContent = result;
       prev.className = '';
     };
 
     // Preview Listeners
-    ['tf-pos','tf-dir','tf-insert-text','tf-del-count','tf-ignore-empty'].forEach(id => {
+    const transformInputs = [
+      'tf-pos', 'tf-dir', 'tf-insert-text', 'tf-del-count', 'tf-ignore-empty', 
+      'tf-trunc-mark', 'tf-trunc-action', 'tf-trunc-exact', 'tf-trunc-incl'
+    ];
+    transformInputs.forEach(id => {
       const el = document.getElementById(id);
-      el.addEventListener('input', updatePreview); el.addEventListener('change', updatePreview);
+      if(el) { el.addEventListener('input', updatePreview); el.addEventListener('change', updatePreview); }
     });
+
     els.editor.addEventListener('input', () => {
       state.current = els.editor.value;
       if(!state.original && state.current) state.original = state.current;
@@ -475,22 +543,10 @@
 
     // Transform Action
     document.getElementById('btn-transform').addEventListener('click', () => {
-      const pos = Math.max(0, parseInt(document.getElementById('tf-pos').value)||0);
-      const dir = document.getElementById('tf-dir').value;
       const ignore = document.getElementById('tf-ignore-empty').checked;
       processText(line => {
         if(ignore && line.trim()==='') return line;
-        if(currentMode==='insert') {
-          const text = document.getElementById('tf-insert-text').value;
-          if(!text) return line;
-          const len=line.length;
-          const idx = dir==='start' ? Math.min(pos,len) : Math.min(Math.max(0,len-pos),len);
-          return `${line.slice(0,idx)}${text}${line.slice(idx)}`;
-        } else {
-          const count = Math.max(0, parseInt(document.getElementById('tf-del-count').value)||0);
-          const safe = Math.min(count, line.length);
-          return dir==='start' ? line.slice(safe) : line.slice(0, -safe||undefined);
-        }
+        return transformLineLogic(line);
       });
     });
 
@@ -512,40 +568,39 @@
       processText(line => { if(ign && line.trim()==='') return line; return `${String(start++).padStart(dig,'0')}${sep}${line}`; });
     });
 
-    // ===== EXCLUIR LINHAS POR TEXTO (NOVO) =====
+    // Excluir Linhas por Texto
     document.getElementById('btn-exclude-lines').addEventListener('click', () => {
       const searchText = document.getElementById('exclude-text').value;
       if (!searchText) return showToast('Preencha o texto para buscar.', 'error');
       
       const caseSensitive = document.getElementById('exclude-case').checked;
+      const inverterAcao = document.getElementById('exclude-invert').checked;
       const input = els.editor.value;
       if (!input) return showToast('Nenhum texto para processar.', 'error');
       
       setStatus('Processando...', true);
       
       setTimeout(() => {
-        saveHistory(); // ✅ Integra com sistema de Undo
-        
+        saveHistory();
         const linhas = input.split('\n');
         const filtradas = linhas.filter(linha => {
-          if (caseSensitive) {
-            return !linha.includes(searchText);
-          } else {
-            return !linha.toLowerCase().includes(searchText.toLowerCase());
-          }
+          const possuiTexto = caseSensitive
+            ? linha.includes(searchText)
+            : linha.toLowerCase().includes(searchText.toLowerCase());
+          return inverterAcao ? possuiTexto : !possuiTexto;
         });
         
         const removidas = linhas.length - filtradas.length;
-        updateEditor(filtradas.join('\n')); // ✅ Atualiza editor + status + preview
+        updateEditor(filtradas.join('\n'));
         
         if (removidas === 0) {
           setStatus('ℹ️ Nenhuma linha correspondente encontrada.');
-          showToast('Nenhuma linha encontrada com este texto.', 'success');
+          showToast('Nenhuma linha foi afetada.', 'success');
         } else {
           setStatus(`✅ ${removidas} linha(s) removida(s).`);
           showToast(`${removidas} linha(s) excluída(s).`, 'success');
         }
-      }, 10); // ✅ Mantém responsividade da UI
+      }, 10);
     });
 
     // Global Actions
