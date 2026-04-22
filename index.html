@@ -104,9 +104,12 @@
       border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem;
       font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
       font-size: 0.85rem; resize: none; line-height: 1.6; min-height: 200px;
-      transition: border-color 0.2s;
+      transition: all 0.2s;
     }
     #editor:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+    
+    /* Drag and Drop visual feedback */
+    #editor.drag-over { border: 2px dashed var(--accent); background: var(--accent-glow); }
 
     .status-bar { font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.5rem; padding-top: 0.25rem; }
     .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex-shrink: 0; }
@@ -214,7 +217,7 @@
           <path d="m15 5 4 4"/>
         </svg>
         <h1>Editor de Texto</h1>
-        <span class="version">v2.2</span>
+        <span class="version">v2.3</span>
       </div>
       <div class="header-actions">
         <button class="icon-btn" id="themeToggle" aria-label="Alternar tema">
@@ -239,6 +242,13 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
             Original
           </button>
+          
+          <input type="file" id="file-import" multiple class="hidden">
+          <button class="tool-btn" id="btn-import-files" title="Carregar nomes de arquivos ou arraste para o editor">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+            Nomes de Arquivos
+          </button>
+
           <button class="tool-btn" id="btn-copy">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="8" y="8" width="14" height="14" rx="2"/><path d="M4 16V6a2 2 0 0 1 2-2h12"/></svg>
             Copiar
@@ -251,10 +261,10 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
           </button>
         </div>
-        <textarea id="editor" placeholder="Cole ou digite seu texto aqui...&#10;Cada linha será processada individualmente."></textarea>
+        <textarea id="editor" placeholder="Cole seu texto, arraste arquivos para cá, ou digite manualmente...&#10;Cada linha será processada individualmente."></textarea>
         <div class="status-bar">
           <span class="status-dot" id="status-dot"></span>
-          <span id="status-text">Pronto. Cole ou digite um texto para começar.</span>
+          <span id="status-text">Pronto. Cole, digite ou arraste arquivos para começar.</span>
         </div>
       </section>
 
@@ -366,7 +376,7 @@
           </div>
           <div class="field"><label>Texto para buscar</label><input type="text" id="exclude-text" placeholder="Ex: erro, null, @..."></div>
           <label class="checkbox"><input type="checkbox" id="exclude-case"> Diferenciar maiúsculas/minúsculas</label>
-          <label class="checkbox"><input type="checkbox" id="exclude-invert"> Excluir linhas que <b>NÃO</b> contêm</label>
+          <label class="checkbox"><input type="checkbox" id="exclude-invert"> Excluir linhas que <b>NÃO</b> contêm (Manter correspondências)</label>
           <button class="apply-btn" id="btn-exclude-lines">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
             Excluir Linhas
@@ -601,6 +611,53 @@
           showToast(`${removidas} linha(s) excluída(s).`, 'success');
         }
       }, 10);
+    });
+
+    // ===== IMPORTAR NOMES DE ARQUIVOS (NOVO) =====
+    const fileInput = document.getElementById('file-import');
+    const btnImport = document.getElementById('btn-import-files');
+
+    // Manipula a extração dos nomes de arquivos
+    const handleFiles = (files) => {
+      if (!files || files.length === 0) return;
+      
+      const names = Array.from(files).map(f => f.name).join('\n');
+      saveHistory();
+      
+      const currentText = els.editor.value;
+      // Se já houver texto (e não terminar com quebra de linha), adiciona uma antes
+      const prefix = (currentText && !currentText.endsWith('\n')) ? '\n' : '';
+      const newText = currentText ? currentText + prefix + names : names;
+      
+      if(!state.original) state.original = newText;
+      updateEditor(newText);
+      showToast(`${files.length} nome(s) importado(s).`, 'success');
+    };
+
+    // Ação do Botão
+    btnImport.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => {
+      handleFiles(e.target.files);
+      e.target.value = ''; // Reseta para permitir selecionar os mesmos arquivos novamente
+    });
+
+    // Ações de Arrasto (Drag & Drop) direto no Editor
+    els.editor.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      els.editor.classList.add('drag-over');
+    });
+
+    els.editor.addEventListener('dragleave', (e) => {
+      e.preventDefault();
+      els.editor.classList.remove('drag-over');
+    });
+
+    els.editor.addEventListener('drop', (e) => {
+      e.preventDefault();
+      els.editor.classList.remove('drag-over');
+      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+         handleFiles(e.dataTransfer.files);
+      }
     });
 
     // Global Actions
