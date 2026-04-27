@@ -217,7 +217,7 @@
           <path d="m15 5 4 4"/>
         </svg>
         <h1>Editor de Texto</h1>
-        <span class="version">v2.3</span>
+        <span class="version">v2.5</span>
       </div>
       <div class="header-actions">
         <button class="icon-btn" id="themeToggle" aria-label="Alternar tema">
@@ -294,8 +294,10 @@
             <div class="mode-opt active" data-mode="insert">Inserir</div>
             <div class="mode-opt" data-mode="delete">Excluir Qtd</div>
             <div class="mode-opt" data-mode="truncate">Excluir por Texto</div>
+            <div class="mode-opt" data-mode="move">Mover</div>
           </div>
 
+          <!-- Campos para modos Insert/Delete -->
           <div id="tf-pos-container">
             <div class="row" style="margin-bottom: 0.5rem;">
               <div class="field" style="margin-bottom:0"><label>Posição</label><input type="number" id="tf-pos" value="0" min="0"></div>
@@ -337,6 +339,40 @@
               <input type="text" id="tf-trunc-exact" placeholder="Ex: min">
             </div>
             <label class="checkbox"><input type="checkbox" id="tf-trunc-incl"> Excluir também o marcador</label>
+          </div>
+
+          <!-- Campos para modo Move (simplificado) -->
+          <div id="tf-move-field" class="hidden">
+            <div class="field" style="margin-bottom: 0.5rem;">
+              <label>Qtd. Caracteres</label>
+              <input type="number" id="tf-move-count" value="2" min="1">
+            </div>
+            <div class="row" style="margin-bottom: 0.5rem;">
+              <div class="field" style="margin-bottom:0">
+                <label>Da Posição</label>
+                <input type="number" id="tf-move-from" value="0" min="0">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>Direção Origem</label>
+                <select id="tf-move-from-dir">
+                  <option value="start" selected>Do início</option>
+                  <option value="end">Do final</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" style="margin-bottom: 0.5rem;">
+              <div class="field" style="margin-bottom:0">
+                <label>Para Posição</label>
+                <input type="number" id="tf-move-to" value="4" min="0">
+              </div>
+              <div class="field" style="margin-bottom:0">
+                <label>Direção Destino</label>
+                <select id="tf-move-to-dir">
+                  <option value="start" selected>Do início</option>
+                  <option value="end">Do final</option>
+                </select>
+              </div>
+            </div>
           </div>
 
           <label class="checkbox"><input type="checkbox" id="tf-ignore-empty" checked> Ignorar linhas vazias</label>
@@ -449,11 +485,15 @@
         modeOpts.forEach(o=>o.classList.remove('active'));
         opt.classList.add('active');
         
-        const isPosMode = currentMode === 'insert' || currentMode === 'delete';
-        document.getElementById('tf-pos-container').classList.toggle('hidden', !isPosMode);
+        // tf-pos-container: usado por insert e delete
+        const showPosContainer = currentMode === 'insert' || currentMode === 'delete';
+        document.getElementById('tf-pos-container').classList.toggle('hidden', !showPosContainer);
+        
+        // Campos específicos de cada modo
         document.getElementById('tf-insert-field').classList.toggle('hidden', currentMode !== 'insert');
         document.getElementById('tf-delete-field').classList.toggle('hidden', currentMode !== 'delete');
         document.getElementById('tf-truncate-field').classList.toggle('hidden', currentMode !== 'truncate');
+        document.getElementById('tf-move-field').classList.toggle('hidden', currentMode !== 'move');
         
         updatePreview();
       });
@@ -465,17 +505,26 @@
       document.getElementById('tf-trunc-exact-box').classList.toggle('hidden', !isExact);
     });
 
-    // Presets
+    // Presets (apenas para modos Insert/Delete)
     document.querySelectorAll('.preset-btn').forEach(btn => {
       btn.addEventListener('click', () => {
+        // Só responde se os campos de posição estiverem visíveis
+        if(document.getElementById('tf-pos-container').classList.contains('hidden')) return;
+        
         const preset = btn.dataset.preset;
         const dirEl = document.getElementById('tf-dir');
         const posEl = document.getElementById('tf-pos');
         if(preset==='start0') { dirEl.value='start'; posEl.value=0; }
-        else { dirEl.value='end'; posEl.value=0; }
+        else if(preset==='end0') { dirEl.value='end'; posEl.value=0; }
         updatePreview();
       });
     });
+
+    // Função auxiliar para calcular índice absoluto a partir de posição e direção
+    const calcIndex = (pos, dir, len) => {
+      const p = Math.max(0, parseInt(pos)||0);
+      return dir === 'start' ? Math.min(p, len) : Math.min(Math.max(0, len - p), len);
+    };
 
     // Função central que aplica a lógica de Transformar Texto
     const transformLineLogic = (line) => {
@@ -519,6 +568,42 @@
           return line.replace(regex, incl ? '' : mark);
         }
       }
+      else if(currentMode === 'move') {
+        const count = Math.max(1, parseInt(document.getElementById('tf-move-count').value)||1);
+        const fromPos = parseInt(document.getElementById('tf-move-from').value)||0;
+        const fromDir = document.getElementById('tf-move-from-dir').value;
+        const toPos = parseInt(document.getElementById('tf-move-to').value)||0;
+        const toDir = document.getElementById('tf-move-to-dir').value;
+        const len = line.length;
+        
+        if(count === 0 || len === 0) return line;
+        
+        // Calcula índices absolutos
+        const fromIdx = calcIndex(fromPos, fromDir, len);
+        const toIdx = calcIndex(toPos, toDir, len);
+        
+        // Limita a quantidade ao disponível a partir da origem
+        const actualCount = Math.min(count, len - fromIdx);
+        if(actualCount <= 0) return line;
+        
+        // Extrai o trecho a ser movido
+        const segment = line.slice(fromIdx, fromIdx + actualCount);
+        
+        // Remove o trecho da posição original
+        const withoutSegment = line.slice(0, fromIdx) + line.slice(fromIdx + actualCount);
+        
+        // Calcula o índice de inserção no texto já modificado (ajustando se necessário)
+        let insertIdx = toIdx;
+        // Se o destino estava depois da origem, o índice diminui porque removemos caracteres antes
+        if(toIdx > fromIdx) {
+          insertIdx = Math.min(toIdx - actualCount, withoutSegment.length);
+        } else {
+          insertIdx = Math.min(toIdx, withoutSegment.length);
+        }
+        
+        // Insere o segmento na nova posição
+        return withoutSegment.slice(0, insertIdx) + segment + withoutSegment.slice(insertIdx);
+      }
       return line;
     };
 
@@ -538,7 +623,8 @@
     // Preview Listeners
     const transformInputs = [
       'tf-pos', 'tf-dir', 'tf-insert-text', 'tf-del-count', 'tf-ignore-empty', 
-      'tf-trunc-mark', 'tf-trunc-action', 'tf-trunc-exact', 'tf-trunc-incl'
+      'tf-trunc-mark', 'tf-trunc-action', 'tf-trunc-exact', 'tf-trunc-incl',
+      'tf-move-count', 'tf-move-from', 'tf-move-from-dir', 'tf-move-to', 'tf-move-to-dir'
     ];
     transformInputs.forEach(id => {
       const el = document.getElementById(id);
@@ -613,11 +699,10 @@
       }, 10);
     });
 
-    // ===== IMPORTAR NOMES DE ARQUIVOS (NOVO) =====
+    // ===== IMPORTAR NOMES DE ARQUIVOS =====
     const fileInput = document.getElementById('file-import');
     const btnImport = document.getElementById('btn-import-files');
 
-    // Manipula a extração dos nomes de arquivos
     const handleFiles = (files) => {
       if (!files || files.length === 0) return;
       
@@ -625,7 +710,6 @@
       saveHistory();
       
       const currentText = els.editor.value;
-      // Se já houver texto (e não terminar com quebra de linha), adiciona uma antes
       const prefix = (currentText && !currentText.endsWith('\n')) ? '\n' : '';
       const newText = currentText ? currentText + prefix + names : names;
       
@@ -634,24 +718,21 @@
       showToast(`${files.length} nome(s) importado(s).`, 'success');
     };
 
-    // Ação do Botão
     btnImport.addEventListener('click', () => fileInput.click());
     fileInput.addEventListener('change', (e) => {
       handleFiles(e.target.files);
-      e.target.value = ''; // Reseta para permitir selecionar os mesmos arquivos novamente
+      e.target.value = '';
     });
 
-    // Ações de Arrasto (Drag & Drop) direto no Editor
+    // Drag & Drop
     els.editor.addEventListener('dragover', (e) => {
       e.preventDefault();
       els.editor.classList.add('drag-over');
     });
-
     els.editor.addEventListener('dragleave', (e) => {
       e.preventDefault();
       els.editor.classList.remove('drag-over');
     });
-
     els.editor.addEventListener('drop', (e) => {
       e.preventDefault();
       els.editor.classList.remove('drag-over');
