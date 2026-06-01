@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Editor de Nomes em Lote v2.6</title>
+<title>Editor de Nomes em Lote v2.7.1</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
     
@@ -278,21 +278,37 @@
     ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
     
     .section-sep { border-top: 1px dashed var(--border); margin: 0.8rem 0; }
+    
+    .new-badge {
+        background: var(--success);
+        color: white;
+        font-size: 0.65rem;
+        padding: 0.1rem 0.4rem;
+        border-radius: 4px;
+        margin-left: 0.3rem;
+        font-weight: 600;
+    }
+    
+    .hint-inline {
+        font-size: 0.72rem;
+        color: var(--text-dim);
+        margin-top: 0.2rem;
+        font-style: italic;
+    }
 </style>
 </head>
 <body>
 
 <header>
     <div>
-        <h1>📝 Editor de Nomes em Lote <span class="version">v2.6</span></h1>
+        <h1>📝 Editor de Nomes em Lote <span class="version">v2.7.1</span></h1>
     </div>
 </header>
 
 <div class="container">
-    <!-- COLUNA 1: ENTRADA -->
     <div class="card">
         <h2>📂 Lista de Nomes</h2>
-        <p class="hint">Arraste arquivos ou pastas para extrair os nomes automaticamente. Edite a lista e exporte para usar em outro sistema.</p>
+        <p class="hint">Arraste arquivos para extrair os nomes automaticamente. Edite a lista e exporte para usar em outro sistema.</p>
         
         <div class="drop-zone" id="dropZone">
             📁 Arraste arquivos aqui ou <strong>clique para selecionar</strong>
@@ -302,7 +318,6 @@
         <textarea id="inputText" placeholder="Os nomes dos arquivos aparecerão aqui...&#10;Um nome por linha."></textarea>
     </div>
     
-    <!-- COLUNA 2: FERRAMENTAS -->
     <div class="card">
         <h2>⚙️ Ferramentas de Edição</h2>
         
@@ -313,7 +328,6 @@
             <button class="tab" onclick="switchTab(event, 'tab-filter')">🗑️ Filtrar</button>
         </div>
         
-        <!-- Localizar & Substituir -->
         <div id="tab-find" class="tab-content active">
             <div class="form-group">
                 <label>Localizar:</label>
@@ -332,7 +346,6 @@
             <button class="btn btn-block" onclick="applyFindReplace()">✅ Aplicar</button>
         </div>
         
-        <!-- Transformar -->
         <div id="tab-transform" class="tab-content">
             <div class="form-group">
                 <label>Tipo de Ação:</label>
@@ -340,6 +353,7 @@
                     <option value="insert">Inserir Texto</option>
                     <option value="delete-chars">Excluir Quantidade de Caracteres</option>
                     <option value="delete-text">Excluir Texto Exato</option>
+                    <option value="delete-position">🆕 Excluir em Posição Específica</option>
                     <option value="delete-before">Excluir ANTES do marcador</option>
                     <option value="delete-after">Excluir DEPOIS do marcador</option>
                     <option value="delete-all-before">Excluir TUDO antes do marcador</option>
@@ -370,7 +384,6 @@
             <button class="btn btn-success btn-block" onclick="applyTransform()">⚡ Aplicar Transformação</button>
         </div>
         
-        <!-- Enumerador -->
         <div id="tab-number" class="tab-content">
             <div class="form-row-3">
                 <div class="form-group">
@@ -399,7 +412,6 @@
             <button class="btn btn-block" onclick="applyNumbering()">🔢 Numerar Linhas</button>
         </div>
         
-        <!-- Filtrar/Excluir Linhas -->
         <div id="tab-filter" class="tab-content">
             <div class="form-group">
                 <label>Texto para buscar:</label>
@@ -469,7 +481,7 @@ function switchTab(e, id) {
     if (id === 'tab-transform') updatePreview();
 }
 
-// ==================== DROP ZONE (APENAS NOMES) ====================
+// ==================== DROP ZONE ====================
 function setupDropZone() {
     const dz = document.getElementById('dropZone');
     const fi = document.getElementById('fileInput');
@@ -491,7 +503,6 @@ function handleFiles(files) {
     
     if (names.length === 0) return;
     
-    // Adiciona os nomes ao final da lista atual
     const current = input.value.trim();
     input.value = current ? current + '\n' + names.join('\n') : names.join('\n');
     
@@ -581,27 +592,153 @@ function updateTransformUI() {
     const type = document.getElementById('transformType').value;
     const config = document.getElementById('transformConfig');
     
+    // Templates SEM lógica condicional problemática
     const templates = {
         'insert': `
-            <div class="form-group"><label>Texto a inserir:</label><input type="text" id="t_text" placeholder="Prefixo ou sufixo..."></div>
-            <div class="form-group"><label>Posição:</label><select id="t_position"><option value="start">Início da linha</option><option value="end">Final da linha</option></select></div>`,
+            <div class="form-group">
+                <label>Texto a inserir:</label>
+                <input type="text" id="t_text" placeholder="Prefixo ou sufixo...">
+            </div>
+            <div class="form-group">
+                <label>Posição:</label>
+                <select id="t_position">
+                    <option value="start">Início da linha</option>
+                    <option value="end">Final da linha</option>
+                    <option value="position">🆕 Posição Específica (nº do caractere)</option>
+                </select>
+            </div>
+            <div id="positionExtra" style="display:none; padding: 0.6rem; background: rgba(124, 58, 237, 0.08); border-radius: 6px; border-left: 3px solid var(--accent); margin-bottom: 0.8rem;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Nº do Caractere:</label>
+                        <input type="number" id="t_posNum" value="0" min="0">
+                        <p class="hint-inline">0 = antes do 1º caractere, 1 = após o 1º, etc.</p>
+                    </div>
+                    <div class="form-group">
+                        <label>Inserir:</label>
+                        <select id="t_insertMode">
+                            <option value="before">Antes desse caractere</option>
+                            <option value="after">Depois desse caractere</option>
+                        </select>
+                    </div>
+                </div>
+            </div>`,
+        
         'delete-chars': `
-            <div class="form-row"><div class="form-group"><label>Qtd. Caracteres:</label><input type="number" id="t_count" value="1" min="1"></div><div class="form-group"><label>Da Posição:</label><select id="t_direction"><option value="start">Do início</option><option value="end">Do final</option></select></div></div>`,
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Qtd. Caracteres:</label>
+                    <input type="number" id="t_count" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Da Posição:</label>
+                    <select id="t_direction">
+                        <option value="start">Do início</option>
+                        <option value="end">Do final</option>
+                    </select>
+                </div>
+            </div>`,
+        
         'delete-text': `
-            <div class="form-group"><label>Texto exato a excluir:</label><input type="text" id="t_text" placeholder="Texto..."></div>`,
+            <div class="form-group">
+                <label>Texto exato a excluir:</label>
+                <input type="text" id="t_text" placeholder="Texto...">
+            </div>`,
+        
+        'delete-position': `
+            <p class="hint">🆕 Remove caracteres a partir de uma posição específica.</p>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Posição Inicial:</label>
+                    <input type="number" id="t_startPos" value="0" min="0">
+                    <p class="hint-inline">0 = primeiro caractere</p>
+                </div>
+                <div class="form-group">
+                    <label>Quantidade a excluir:</label>
+                    <input type="number" id="t_count" value="1" min="1">
+                </div>
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" id="t_untilEnd"> Excluir até o final da linha (ignora quantidade)
+            </label>`,
+        
         'delete-before': `
-            <div class="form-group"><label>Marcador Base:</label><input type="text" id="t_marker" placeholder="Ex: - ou _"></div><label class="checkbox"><input type="checkbox" id="t_include"> Excluir também o marcador</label>`,
+            <div class="form-group">
+                <label>Marcador Base:</label>
+                <input type="text" id="t_marker" placeholder="Ex: - ou _">
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" id="t_include"> Excluir também o marcador
+            </label>`,
+        
         'delete-after': `
-            <div class="form-group"><label>Marcador Base:</label><input type="text" id="t_marker" placeholder="Ex: - ou _"></div><label class="checkbox"><input type="checkbox" id="t_include"> Excluir também o marcador</label>`,
+            <div class="form-group">
+                <label>Marcador Base:</label>
+                <input type="text" id="t_marker" placeholder="Ex: - ou _">
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" id="t_include"> Excluir também o marcador
+            </label>`,
+        
         'delete-all-before': `
-            <div class="form-group"><label>Marcador Base:</label><input type="text" id="t_marker" placeholder="Ex: - ou _"></div><label class="checkbox"><input type="checkbox" id="t_include"> Excluir também o marcador</label>`,
+            <div class="form-group">
+                <label>Marcador Base:</label>
+                <input type="text" id="t_marker" placeholder="Ex: - ou _">
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" id="t_include"> Excluir também o marcador
+            </label>`,
+        
         'delete-all-after': `
-            <div class="form-group"><label>Marcador Base:</label><input type="text" id="t_marker" placeholder="Ex: - ou _"></div><label class="checkbox"><input type="checkbox" id="t_include"> Excluir também o marcador</label>`,
+            <div class="form-group">
+                <label>Marcador Base:</label>
+                <input type="text" id="t_marker" placeholder="Ex: - ou _">
+            </div>
+            <label class="checkbox">
+                <input type="checkbox" id="t_include"> Excluir também o marcador
+            </label>`,
+        
         'move': `
-            <div class="form-row"><div class="form-group"><label>Qtd. Caracteres:</label><input type="number" id="t_count" value="1" min="1"></div><div class="form-group"><label>Origem:</label><select id="t_from"><option value="start">Do início</option><option value="end">Do final</option></select></div></div><div class="form-group"><label>Destino:</label><select id="t_to"><option value="start">Para o início</option><option value="end">Para o final</option></select></div>`
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Qtd. Caracteres:</label>
+                    <input type="number" id="t_count" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Origem:</label>
+                    <select id="t_from">
+                        <option value="start">Do início</option>
+                        <option value="end">Do final</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Destino:</label>
+                <select id="t_to">
+                    <option value="start">Para o início</option>
+                    <option value="end">Para o final</option>
+                </select>
+            </div>`
     };
     
     config.innerHTML = templates[type] || '';
+    
+    // ✅ CORREÇÃO: Configurar listeners DEPOIS do HTML existir
+    if (type === 'insert') {
+        const posSelect = document.getElementById('t_position');
+        const extra = document.getElementById('positionExtra');
+        
+        if (posSelect && extra) {
+            const toggleExtra = () => {
+                extra.style.display = posSelect.value === 'position' ? 'block' : 'none';
+                updatePreview();
+            };
+            
+            posSelect.addEventListener('change', toggleExtra);
+            toggleExtra(); // Configurar estado inicial
+        }
+    }
+    
     updatePreview();
 }
 
@@ -614,18 +751,55 @@ function transformLine(line, type) {
         case 'insert': {
             const text = document.getElementById('t_text')?.value || '';
             const pos = document.getElementById('t_position')?.value || 'start';
-            return pos === 'start' ? text + line : line + text;
+            
+            if (pos === 'start') return text + line;
+            if (pos === 'end') return line + text;
+            if (pos === 'position') {
+                const posNum = parseInt(document.getElementById('t_posNum')?.value) || 0;
+                const mode = document.getElementById('t_insertMode')?.value || 'before';
+                
+                // Garantir posição válida
+                const safePos = Math.min(Math.max(0, posNum), line.length);
+                
+                if (mode === 'before') {
+                    // Insere ANTES do caractere na posição safePos
+                    return line.substring(0, safePos) + text + line.substring(safePos);
+                } else {
+                    // Insere DEPOIS do caractere na posição safePos
+                    const afterPos = Math.min(safePos + 1, line.length);
+                    return line.substring(0, afterPos) + text + line.substring(afterPos);
+                }
+            }
+            return line;
         }
+        
         case 'delete-chars': {
             const count = parseInt(document.getElementById('t_count')?.value) || 0;
             const dir = document.getElementById('t_direction')?.value || 'start';
             if (count >= line.length) return '';
             return dir === 'start' ? line.substring(count) : line.substring(0, line.length - count);
         }
+        
         case 'delete-text': {
             const text = document.getElementById('t_text')?.value || '';
             return text ? line.split(text).join('') : line;
         }
+        
+        case 'delete-position': {
+            const startPos = parseInt(document.getElementById('t_startPos')?.value) || 0;
+            const count = parseInt(document.getElementById('t_count')?.value) || 0;
+            const untilEnd = document.getElementById('t_untilEnd')?.checked;
+            
+            const safeStart = Math.min(Math.max(0, startPos), line.length);
+            
+            if (untilEnd) {
+                return line.substring(0, safeStart);
+            } else {
+                const safeCount = Math.min(count, line.length - safeStart);
+                return line.substring(0, safeStart) + line.substring(safeStart + safeCount);
+            }
+        }
+        
         case 'delete-before': {
             const marker = document.getElementById('t_marker')?.value || '';
             const include = document.getElementById('t_include')?.checked;
@@ -633,6 +807,7 @@ function transformLine(line, type) {
             if (idx === -1 || !marker) return line;
             return include ? line.substring(idx + marker.length) : line.substring(idx);
         }
+        
         case 'delete-after': {
             const marker = document.getElementById('t_marker')?.value || '';
             const include = document.getElementById('t_include')?.checked;
@@ -640,6 +815,7 @@ function transformLine(line, type) {
             if (idx === -1 || !marker) return line;
             return include ? line.substring(0, idx) : line.substring(0, idx + marker.length);
         }
+        
         case 'delete-all-before': {
             const marker = document.getElementById('t_marker')?.value || '';
             const include = document.getElementById('t_include')?.checked;
@@ -647,6 +823,7 @@ function transformLine(line, type) {
             if (idx === -1 || !marker) return line;
             return include ? line.substring(idx + marker.length) : line.substring(idx);
         }
+        
         case 'delete-all-after': {
             const marker = document.getElementById('t_marker')?.value || '';
             const include = document.getElementById('t_include')?.checked;
@@ -654,6 +831,7 @@ function transformLine(line, type) {
             if (idx === -1 || !marker) return line;
             return include ? line.substring(0, idx) : line.substring(0, idx + marker.length);
         }
+        
         case 'move': {
             const count = parseInt(document.getElementById('t_count')?.value) || 0;
             const from = document.getElementById('t_from')?.value || 'start';
@@ -713,10 +891,14 @@ function escapeHtml(t) {
 
 // Atualizar preview em tempo real
 document.addEventListener('input', e => {
-    if (e.target.id?.startsWith('t_') && document.getElementById('tab-transform').classList.contains('active')) updatePreview();
+    if (e.target.id?.startsWith('t_') && document.getElementById('tab-transform').classList.contains('active')) {
+        updatePreview();
+    }
 });
 document.addEventListener('change', e => {
-    if (e.target.id?.startsWith('t_') && document.getElementById('tab-transform').classList.contains('active')) updatePreview();
+    if (e.target.id?.startsWith('t_') && document.getElementById('tab-transform').classList.contains('active')) {
+        updatePreview();
+    }
 });
 
 // ==================== ENUMERADOR ====================
@@ -744,7 +926,7 @@ function applyNumbering() {
     toast('✅ Nomes numerados', 'success');
 }
 
-// ==================== FILTRAR/EXCLUIR LINHAS ====================
+// ==================== FILTRAR ====================
 function applyFilter() {
     const input = document.getElementById('inputText');
     const text = document.getElementById('filterText').value;
