@@ -3,61 +3,113 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Editor de Nomes em Lote Pro v3.0.0</title>
+<title>Editor de Nomes em Lote Ultra v4.0</title>
 <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     
+    /* VARIÁVEIS DE TEMA REATIVAS */
     :root {
-        --bg: #0f0f16;
-        --bg-card: #181826;
-        --bg-input: #222235;
-        --text: #f1f1f7;
-        --text-dim: #9a9ab6;
-        --accent: #8b5cf6;
-        --accent-hover: #7c3aed;
+        --bg: #09090b;
+        --bg-card: #141417;
+        --bg-input: #1f1f23;
+        --text: #f4f4f5;
+        --text-dim: #a1a1aa;
+        --accent: #a78bfa;
+        --accent-hover: #c084fc;
         --success: #10b981;
-        --danger: #ef4444;
+        --danger: #f43f5e;
         --warning: #f59e0b;
-        --border: #31314d;
+        --border: #27272a;
+        --shadow: rgba(0, 0, 0, 0.4);
+        --preview-arrow: #3f3f46;
+    }
+
+    .light-mode {
+        --bg: #f4f4f5;
+        --bg-card: #ffffff;
+        --bg-input: #f1f1f3;
+        --text: #09090b;
+        --text-dim: #71717a;
+        --accent: #6d28d9;
+        --accent-hover: #7c3aed;
+        --success: #059669;
+        --danger: #e11d48;
+        --warning: #d97706;
+        --border: #e4e4e7;
+        --shadow: rgba(0, 0, 0, 0.05);
+        --preview-arrow: #d1d1d6;
     }
     
-    body { background: var(--bg); color: var(--text); min-height: 100vh; padding: 1.5rem; }
+    body { 
+        background: var(--bg); 
+        color: var(--text); 
+        min-height: 100vh; 
+        padding: 1.5rem;
+        transition: background 0.3s, color 0.3s;
+    }
     
     header {
         background: var(--bg-card);
         padding: 1.2rem 2rem;
-        border-radius: 14px;
+        border-radius: 16px;
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 1.5rem;
         border: 1px solid var(--border);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 20px var(--shadow);
     }
     
     header h1 {
-        font-size: 1.4rem;
-        background: linear-gradient(135deg, var(--accent), #ec4899);
+        font-size: 1.5rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--accent), #f43f5e);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         display: flex;
         align-items: center;
+        gap: 0.6rem;
     }
     
-    .version {
-        background: var(--bg-input);
-        padding: 0.25rem 0.7rem;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        color: var(--text-dim);
-        margin-left: 0.8rem;
-        border: 1px solid var(--border);
+    .header-controls {
+        display: flex;
+        align-items: center;
+        gap: 1.5rem;
     }
+
+    .theme-toggle {
+        background: transparent;
+        border: none;
+        color: var(--text);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.5rem;
+        border-radius: 50%;
+        transition: background 0.2s;
+    }
+
+    .theme-toggle:hover {
+        background: var(--bg-input);
+    }
+
+    .theme-toggle svg {
+        width: 22px;
+        height: 22px;
+        fill: currentColor;
+    }
+
+    .light-mode .sun-icon { display: none; }
+    .dark-mode .moon-icon { display: none; }
+    body:not(.light-mode) .moon-icon { display: none; }
+    body.light-mode .sun-icon { display: none; }
     
     .container {
         display: grid;
-        grid-template-columns: 1.1fr 0.9fr;
+        grid-template-columns: 1fr 1fr;
         gap: 1.5rem;
+        align-items: start;
     }
     
     @media (max-width: 1024px) {
@@ -66,20 +118,28 @@
     
     .card {
         background: var(--bg-card);
-        border-radius: 14px;
+        border-radius: 16px;
         padding: 1.5rem;
         border: 1px solid var(--border);
+        box-shadow: 0 4px 20px var(--shadow);
         display: flex;
         flex-direction: column;
         gap: 1rem;
     }
     
     .card h2 {
-        font-size: 1.1rem;
-        color: var(--accent);
+        font-size: 1.15rem;
+        color: var(--text);
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.6rem;
+        font-weight: 600;
+    }
+
+    .card h2 svg {
+        width: 20px;
+        height: 20px;
+        color: var(--accent);
     }
     
     .hint {
@@ -90,66 +150,91 @@
     
     .drop-zone {
         border: 2px dashed var(--border);
-        border-radius: 10px;
-        padding: 1.5rem;
+        border-radius: 12px;
+        padding: 2rem 1.5rem;
         text-align: center;
         cursor: pointer;
-        transition: all 0.2s ease-in-out;
+        transition: all 0.2s ease;
         background: var(--bg-input);
+        color: var(--text-dim);
+        font-size: 0.9rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .drop-zone svg {
+        width: 32px;
+        height: 32px;
+        color: var(--text-dim);
     }
     
     .drop-zone:hover, .drop-zone.dragover {
         border-color: var(--accent);
-        background: rgba(139, 92, 246, 0.08);
+        background: rgba(167, 139, 250, 0.05);
+        color: var(--text);
     }
     
     textarea, input[type="text"], input[type="number"], select {
         background: var(--bg-input);
         border: 1px solid var(--border);
         color: var(--text);
-        padding: 0.7rem 0.9rem;
-        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
         font-size: 0.9rem;
         width: 100%;
-        font-family: 'Consolas', monospace;
-        transition: border-color 0.2s;
+        font-family: inherit;
+        transition: border-color 0.2s, box-shadow 0.2s;
     }
     
     textarea:focus, input:focus, select:focus {
         outline: none;
         border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.15);
     }
     
     #inputText {
-        min-height: 320px;
+        min-height: 280px;
         resize: vertical;
+        font-family: 'Consolas', 'Fira Code', Monaco, monospace;
+        font-size: 0.85rem;
+        line-height: 1.5;
     }
     
     .tabs {
         display: flex;
-        gap: 0.2rem;
-        border-bottom: 2px solid var(--border);
-        flex-wrap: wrap;
+        gap: 0.25rem;
+        border-bottom: 1px solid var(--border);
+        overflow-x: auto;
     }
     
     .tab {
         background: transparent;
         border: none;
         color: var(--text-dim);
-        padding: 0.6rem 1rem;
+        padding: 0.75rem 1rem;
         cursor: pointer;
         border-bottom: 2px solid transparent;
         font-size: 0.85rem;
         font-weight: 500;
         transition: all 0.2s;
-        margin-bottom: -2px;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        white-space: nowrap;
+    }
+
+    .tab svg {
+        width: 16px;
+        height: 16px;
     }
     
     .tab:hover { color: var(--text); }
     .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
     
     .tab-content { display: none; }
-    .tab-content.active { display: flex; flex-direction: column; gap: 0.8rem; animation: fadeIn 0.25s ease-out; }
+    .tab-content.active { display: flex; flex-direction: column; gap: 1rem; animation: fadeIn 0.2s ease-out; }
     
     @keyframes fadeIn {
         from { opacity: 0; transform: translateY(4px); }
@@ -161,6 +246,8 @@
         font-size: 0.8rem;
         color: var(--text-dim);
         font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
     }
     
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; }
@@ -170,9 +257,10 @@
         display: flex;
         align-items: center;
         gap: 0.6rem;
-        font-size: 0.88rem;
+        font-size: 0.85rem;
         cursor: pointer;
         user-select: none;
+        color: var(--text);
     }
     
     .checkbox input {
@@ -184,85 +272,131 @@
     
     .btn {
         background: var(--accent);
-        color: white;
+        color: #000000;
+        font-weight: 600;
         border: none;
-        padding: 0.7rem 1.4rem;
-        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
         cursor: pointer;
         font-size: 0.88rem;
-        transition: all 0.2s;
-        font-weight: 600;
+        transition: all 0.2s ease;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.4rem;
+        gap: 0.5rem;
+    }
+
+    body:not(.light-mode) .btn {
+        color: #09090b;
     }
     
     .btn:hover { background: var(--accent-hover); transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
-    .btn-success { background: var(--success); }
+    .btn-success { background: var(--success); color: white !important; }
     .btn-success:hover { background: #059669; }
-    .btn-danger { background: var(--danger); }
-    .btn-danger:hover { background: #dc2626; }
-    .btn-secondary { background: var(--bg-input); border: 1px solid var(--border); color: var(--text); }
+    .btn-danger { background: var(--danger); color: white !important; }
+    .btn-danger:hover { background: #e11d48; }
+    .btn-secondary { background: var(--bg-input); border: 1px solid var(--border); color: var(--text) !important; }
     .btn-secondary:hover { background: var(--border); }
-    .btn-block { width: 100%; margin-top: 0.4rem; }
-    
-    .preview-container {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.8rem;
-        margin-top: 0.2rem;
+    .btn-block { width: 100%; }
+
+    .btn svg {
+        width: 18px;
+        height: 18px;
+        fill: currentColor;
     }
-    
-    .preview-box {
-        background: var(--bg-input);
-        border-radius: 8px;
-        padding: 0.8rem;
-        font-family: 'Consolas', monospace;
-        font-size: 0.8rem;
-        line-height: 1.6;
-        min-height: 150px;
-        max-height: 220px;
-        overflow-y: auto;
-        border: 1px solid var(--border);
-    }
-    
-    .preview-label {
-        font-size: 0.72rem;
-        color: var(--text-dim);
-        margin-bottom: 0.3rem;
-        text-transform: uppercase;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-    
-    .preview-before { border-left: 4px solid var(--warning); }
-    .preview-after { border-left: 4px solid var(--success); }
-    
-    .preview-line {
-        padding: 0.15rem 0.4rem;
-        border-bottom: 1px solid rgba(255,255,255,0.03);
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-    
-    .preview-line.changed { background: rgba(16, 185, 129, 0.12); color: #34d399; }
     
     .config-subpanel {
-        padding: 0.8rem;
-        background: rgba(255, 255, 255, 0.02);
-        border-radius: 8px;
+        padding: 1rem;
+        background: rgba(255, 255, 255, 0.01);
+        border-radius: 12px;
         border: 1px solid var(--border);
         display: flex;
         flex-direction: column;
-        gap: 0.8rem;
+        gap: 1rem;
+    }
+
+    /* SISTEMA DE PREVIEW EM FLUXO CONECTADO */
+    .preview-section {
+        grid-column: 1 / -1;
+        margin-top: 0.5rem;
+    }
+
+    .preview-flow-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        max-height: 380px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+
+    .preview-flow-item {
+        background: var(--bg-card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 0.6rem 1rem;
+        display: grid;
+        grid-template-columns: 40px 1fr 30px 1fr;
+        align-items: center;
+        gap: 1rem;
+        font-family: 'Consolas', 'Fira Code', monospace;
+        font-size: 0.85rem;
+    }
+
+    @media (max-width: 640px) {
+        .preview-flow-item {
+            grid-template-columns: 1fr;
+            gap: 0.3rem;
+        }
+        .preview-flow-arrow {
+            transform: rotate(90deg);
+            justify-self: center;
+        }
+    }
+
+    .preview-flow-index {
+        color: var(--text-dim);
+        font-weight: bold;
+    }
+
+    .preview-flow-before {
+        color: var(--text-dim);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .preview-flow-arrow {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--preview-arrow);
+    }
+
+    .preview-flow-arrow svg {
+        width: 16px;
+        height: 16px;
+        fill: currentColor;
+    }
+
+    .preview-flow-after {
+        color: var(--success);
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .preview-flow-item.no-change .preview-flow-after {
+        color: var(--text);
+        font-weight: normal;
     }
     
     footer {
         background: var(--bg-card);
         padding: 1.2rem 2rem;
-        border-radius: 14px;
+        border-radius: 16px;
         margin-top: 1.5rem;
         display: flex;
         justify-content: space-between;
@@ -270,7 +404,7 @@
         flex-wrap: wrap;
         gap: 1rem;
         border: 1px solid var(--border);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 20px var(--shadow);
     }
     
     .stats { display: flex; gap: 1.5rem; font-size: 0.9rem; color: var(--text-dim); }
@@ -283,13 +417,16 @@
         right: 24px;
         background: var(--bg-card);
         border-left: 4px solid var(--accent);
-        padding: 0.9rem 1.4rem;
-        border-radius: 8px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        padding: 1rem 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px var(--shadow);
         animation: slideIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         z-index: 1000;
         max-width: 350px;
         font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
     }
     
     .toast.success { border-left-color: var(--success); }
@@ -297,158 +434,194 @@
     .toast.warning { border-left-color: var(--warning); }
     
     @keyframes slideIn {
-        from { transform: translateY(100px); opacity: 0; }
+        from { transform: translateY(60px); opacity: 0; }
         to { transform: translateY(0); opacity: 1; }
     }
     
-    ::-webkit-scrollbar { width: 8px; height: 8px; }
-    ::-webkit-scrollbar-track { background: var(--bg); }
-    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-    ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    .dropdown-container {
+        position: relative;
+    }
     
-    .hint-inline { font-size: 0.75rem; color: var(--text-dim); font-style: italic; }
+    .preset-select {
+        cursor: pointer;
+        background: var(--bg-card);
+        font-size: 0.8rem;
+        padding: 0.4rem 0.6rem;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+        color: var(--accent);
+        width: auto;
+        display: inline-block;
+        margin-top: 0.3rem;
+    }
 </style>
 </head>
 <body>
 
 <header>
     <div>
-        <h1>📝 Editor de Nomes em Lote <span class="version">v3.0.0 Pro</span></h1>
+        <h1>
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+            Editor de Nomes Pro
+        </h1>
     </div>
-    <div>
-        <label class="checkbox" title="Impede modificações acidentais na extensão dos arquivos (.txt, .jpg, etc)">
-            <input type="checkbox" id="globalPreserveExt" checked> 🛡️ Preservar Extensões de Arquivos
+    <div class="header-controls">
+        <label class="checkbox" title="Preserva extensões como .mp4, .png ao realizar modificações">
+            <input type="checkbox" id="globalPreserveExt" checked> 🛡️ Preservar Extensões
         </label>
+        <button class="theme-toggle" onclick="toggleTheme()" title="Alternar Tema">
+            <!-- SUN ICON -->
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+            <!-- MOON ICON -->
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
     </div>
 </header>
 
 <div class="container">
+    <!-- COLUNA ESQUERDA: LISTA ENTRADA -->
     <div class="card">
-        <h2>📂 Lista Base de Nomes</h2>
-        <p class="hint">Arraste arquivos e pastas aqui para capturar nomes automaticamente, ou simplesmente cole seu texto.</p>
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+            Arquivos Originais
+        </h2>
+        <p class="hint">Cole uma lista de termos ou jogue seus arquivos direto na área abaixo.</p>
         
         <div class="drop-zone" id="dropZone">
-            📁 Arraste arquivos aqui ou <strong>clique para selecionar do sistema</strong>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V15"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <span>Arraste múltiplos arquivos aqui ou clique para selecionar</span>
             <input type="file" id="fileInput" multiple style="display:none;">
         </div>
         
-        <textarea id="inputText" placeholder="Insira seus nomes aqui, um por linha..."></textarea>
+        <textarea id="inputText" placeholder="Copia e cola nomes aqui (um por linha)...&#10;Ou use o carregador de arquivos acima."></textarea>
     </div>
     
+    <!-- COLUNA DIREITA: CONJUNTO OPERACIONAL -->
     <div class="card">
-        <h2>⚙️ Painel Operacional</h2>
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Painel de Configuração
+        </h2>
         
         <div class="tabs">
-            <button class="tab active" onclick="switchTab(event, 'tab-find')">🔍 Localizar & Trocar</button>
-            <button class="tab" onclick="switchTab(event, 'tab-transform')">🔄 Modificadores</button>
-            <button class="tab" onclick="switchTab(event, 'tab-number')">🔢 Enumerador</button>
-            <button class="tab" onclick="switchTab(event, 'tab-filter')">🧹 Limpeza & Filtro</button>
+            <button class="tab active" onclick="switchTab(event, 'tab-find')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                Substituir
+            </button>
+            <button class="tab" onclick="switchTab(event, 'tab-transform')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
+                Formatadores
+            </button>
+            <button class="tab" onclick="switchTab(event, 'tab-number')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="9" x2="20" y2="9"></line><line x1="4" y1="15" x2="20" y2="15"></line><line x1="10" y1="3" x2="8" y2="21"></line><line x1="16" y1="3" x2="14" y2="21"></line></svg>
+                Sequencial
+            </button>
+            <button class="tab" onclick="switchTab(event, 'tab-filter')">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                Filtro & Scripts
+            </button>
         </div>
         
+        <!-- SUB-ABA: LOCALIZAR & SUBSTITUIR -->
         <div id="tab-find" class="tab-content active">
             <div class="form-group">
                 <label>Procurar por:</label>
-                <input type="text" id="findText" placeholder="Termo ou padrão a ser substituído...">
+                <input type="text" id="findText" placeholder="Texto alvo para remoção ou troca...">
+                <div class="dropdown-container">
+                    <select class="preset-select" onchange="applyRegexPreset(this)">
+                        <option value="">✨ Presets Úteis de Regex...</option>
+                        <option value="numbers">Remover Todos os Números (\d+)</option>
+                        <option value="special">Remover Caracteres Especiais (Regra Web)</option>
+                        <option value="parentheses">Remover Conteúdo entre Parênteses (...)</option>
+                        <option value="spaces">Remover Espaços Duplos</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
-                <label>Substituir com:</label>
-                <input type="text" id="replaceText" placeholder="Novo texto (deixe vazio para deletar)...">
+                <label>Substituir por:</label>
+                <input type="text" id="replaceText" placeholder="Texto substituto (vazio deleta o alvo)...">
             </div>
             <div class="form-row">
-                <label class="checkbox"><input type="checkbox" id="findCase"> Match Case</label>
-                <label class="checkbox"><input type="checkbox" id="findRegex"> Expressão Regular (Regex)</label>
+                <label class="checkbox"><input type="checkbox" id="findCase"> Diferenciar Caixa (Aa)</label>
+                <label class="checkbox"><input type="checkbox" id="findRegex" id="chkRegex"> Usar Expressão Regular</label>
             </div>
-            <button class="btn btn-block" onclick="executeAction('find')">⚡ Executar Substituição</button>
+            <button class="btn btn-block" onclick="executeBatchAction('find')">
+                <svg viewBox="0 0 24 24"><path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/></svg>
+                Aplicar Substituição
+            </button>
         </div>
         
+        <!-- SUB-ABA: FORMATADORES GERAIS -->
         <div id="tab-transform" class="tab-content">
             <div class="form-group">
-                <label>Tipo de Operação Estrutural:</label>
-                <select id="transformType" onchange="toggleTransformFields()">
-                    <optgroup label="Estilização de Caixa (Case)">
-                        <option value="case-upper">CONVERTER PARA MAIÚSCULAS</option>
-                        <option value="case-lower">converter para minúsculas</option>
-                        <option value="case-title">Converter Para Title Case</option>
-                        <option value="case-slug">remover-acentos-e-espacos (Slugify)</option>
+                <label>Modificador de Texto:</label>
+                <select id="transformType" onchange="toggleModifierPanels()">
+                    <optgroup label="Estilização de Caixa">
+                        <option value="upper">CAIXA ALTA (MAIÚSCULO)</option>
+                        <option value="lower">caixa baixa (minúsculo)</option>
+                        <option value="title">Capitalizado (Primeira Letra Maiúscula)</option>
+                        <option value="slug">remover-acentos-e-espacos (Modo Slug)</option>
                     </optgroup>
-                    <optgroup label="Inserções e Cortes">
-                        <option value="insert-text">Inserir Fragmento de Texto</option>
-                        <option value="delete-chars">Cortar Quantidade de Caracteres</option>
-                        <option value="delete-position">Excluir em Posição Customizada</option>
-                        <option value="crop-marker">Limpeza por Marcadores (Delimitadores)</option>
+                    <optgroup label="Cortes e Inserções Técnicas">
+                        <option value="insert">Inserir Prefixo / Sufixo</option>
+                        <option value="trim-chars">Cortar X Caracteres das Pontas</option>
+                        <option value="crop-marker">Limpeza Baseada em Marcadores</option>
                     </optgroup>
                 </select>
             </div>
 
-            <div id="panel-insert-text" class="config-subpanel" style="display:none;">
+            <div id="mod-panel-insert" class="config-subpanel" style="display:none;">
                 <div class="form-group">
-                    <label>Texto a Inserir:</label>
-                    <input type="text" id="t_insertText" placeholder="Texto incremental...">
+                    <label>Texto a Adicionar:</label>
+                    <input type="text" id="t_insertText" placeholder="Insira o texto incremental...">
                 </div>
                 <div class="form-group">
-                    <label>Onde Inserir:</label>
-                    <select id="t_insertPos" onchange="document.getElementById('t_customPosRow').style.display = this.value === 'custom' ? 'block' : 'none'">
-                        <option value="start">No início do nome</option>
-                        <option value="end">No final do nome</option>
-                        <option value="custom">Índice numérico específico</option>
+                    <label>Posicionamento:</label>
+                    <select id="t_insertPos">
+                        <option value="start">Como Prefixo (No Começo)</option>
+                        <option value="end">Como Sufixo (No Final)</option>
                     </select>
-                </div>
-                <div class="form-group" id="t_customPosRow" style="display:none;">
-                    <label>Índice do caractere alvo:</label>
-                    <input type="number" id="t_insertIndex" value="0" min="0">
                 </div>
             </div>
 
-            <div id="panel-delete-chars" class="config-subpanel" style="display:none;">
+            <div id="mod-panel-trim-chars" class="config-subpanel" style="display:none;">
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Contagem de Caracteres:</label>
-                        <input type="number" id="t_delCount" value="1" min="1">
+                        <label>Quantidade de Letras/Chars:</label>
+                        <input type="number" id="t_trimCount" value="1" min="1">
                     </div>
                     <div class="form-group">
                         <label>Direção do Corte:</label>
-                        <select id="t_delDir">
-                            <option value="start">A partir do Início</option>
-                            <option value="end">A partir do Final</option>
+                        <select id="t_trimDir">
+                            <option value="start">Remover do Início</option>
+                            <option value="end">Remover do Final</option>
                         </select>
                     </div>
                 </div>
             </div>
 
-            <div id="panel-delete-position" class="config-subpanel" style="display:none;">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Posição Inicial (Index):</label>
-                        <input type="number" id="t_posStart" value="0" min="0">
-                    </div>
-                    <div class="form-group">
-                        <label>Remover quantos?</label>
-                        <input type="number" id="t_posCount" value="1" min="1">
-                    </div>
-                </div>
-                <label class="checkbox"><input type="checkbox" id="t_posUntilEnd"> Deletar tudo até o final da linha</label>
-            </div>
-
-            <div id="panel-crop-marker" class="config-subpanel" style="display:none;">
+            <div id="mod-panel-crop-marker" class="config-subpanel" style="display:none;">
                 <div class="form-group">
-                    <label>Marcador de Referência:</label>
-                    <input type="text" id="t_markerToken" placeholder="Ex: - ou _ ou [">
+                    <label>Caractere Marcador (Âncora):</label>
+                    <input type="text" id="t_marker" placeholder="Ex: _ ou -">
                 </div>
                 <div class="form-group">
-                    <label>Estratégia de Remoção:</label>
-                    <select id="t_markerStrategy">
-                        <option value="before">Deletar tudo ANTES da primeira ocorrência</option>
-                        <option value="after">Deletar tudo DEPOIS da primeira ocorrência</option>
-                        <option value="all-before">Deletar tudo ANTES da última ocorrência</option>
-                        <option value="all-after">Deletar tudo DEPOIS da última ocorrência</option>
+                    <label>Ação Limpadora:</label>
+                    <select id="t_markerAction">
+                        <option value="before">Deletar tudo ANTES do marcador</option>
+                        <option value="after">Deletar tudo DEPOIS do marcador</option>
                     </select>
                 </div>
-                <label class="checkbox"><input type="checkbox" id="t_markerInclude"> Eliminar o marcador também</label>
+                <label class="checkbox"><input type="checkbox" id="t_markerInclude"> Deletar o próprio marcador junto</label>
             </div>
 
-            <button class="btn btn-success btn-block" onclick="executeAction('transform')">🔄 Aplicar Modificador</button>
+            <button class="btn btn-success btn-block" onclick="executeBatchAction('transform')">
+                <svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg>
+                Executar Modificação
+            </button>
         </div>
         
+        <!-- SUB-ABA: ENUMERADOR SEQUENCIAL -->
         <div id="tab-number" class="tab-content">
             <div class="form-row-3">
                 <div class="form-group">
@@ -456,432 +629,465 @@
                     <input type="number" id="numStart" value="1">
                 </div>
                 <div class="form-group">
-                    <label>Casas Decimais:</label>
-                    <input type="number" id="numDigits" value="2" min="1" max="8">
+                    <label>Dígitos (Zeros):</label>
+                    <input type="number" id="numDigits" value="2" min="1" max="6">
                 </div>
                 <div class="form-group">
                     <label>Alinhamento:</label>
-                    <select id="numPosition">
-                        <option value="prefix">Prefixo (Início)</option>
-                        <option value="suffix">Sufixo (Fim)</option>
+                    <select id="numPos">
+                        <option value="prefix">Começo</option>
+                        <option value="suffix">Fim</option>
                     </select>
                 </div>
             </div>
             <div class="form-group">
-                <label>Caractere Separador:</label>
-                <input type="text" id="numSeparator" value=" - ">
+                <label>Separador de Texto:</label>
+                <input type="text" id="numSep" value=" - ">
             </div>
-            <button class="btn btn-block" onclick="executeAction('number')">🔢 Injetar Sequencial</button>
+            <button class="btn btn-block" onclick="executeBatchAction('number')">
+                <svg viewBox="0 0 24 24"><path d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9v-.9H2v1zm5-6h14v2H7V5zm0 12h14v2H7v-2zm0-6h14v2H7v-2z"/></svg>
+                Aplicar Numeração
+            </button>
         </div>
         
+        <!-- SUB-ABA: FILTRO & SCRIPTS KILLER -->
         <div id="tab-filter" class="tab-content">
             <div class="config-subpanel">
-                <div class="form-group">
-                    <label>Filtrar por Expressão:</label>
-                    <input type="text" id="filterText" placeholder="Remover linhas que combinem com...">
+                <div class="form-row">
+                    <button class="btn btn-secondary" onclick="executeBatchAction('clean-empty')">🧹 Remover Vazios</button>
+                    <button class="btn btn-secondary" onclick="executeBatchAction('clean-dup')">💎 Unificar Duplicados</button>
                 </div>
                 <div class="form-row">
-                    <label class="checkbox"><input type="checkbox" id="filterCase"> Match Case</label>
-                    <label class="checkbox"><input type="checkbox" id="filterRegex"> Regex</label>
+                    <button class="btn btn-secondary" onclick="executeBatchAction('sort-az')">🔼 Ordenar A-Z</button>
+                    <button class="btn btn-secondary" onclick="executeBatchAction('sort-za')">🔽 Ordenar Z-A</button>
                 </div>
-                <label class="checkbox"><input type="checkbox" id="filterInvert"> <b>Inverter:</b> Deletar linhas que NÃO possuem o termo</label>
-                <button class="btn btn-danger btn-block" onclick="executeAction('filter')">🗑️ Filtrar Linhas</button>
             </div>
-            
-            <div class="form-row">
-                <button class="btn btn-secondary" onclick="executeAction('clean-empty')">🧹 Limpar Linhas Vazias</button>
-                <button class="btn btn-secondary" onclick="executeAction('clean-dup')">💎 Remover Duplicatas</button>
-            </div>
-            <div class="form-row">
-                <button class="btn btn-secondary" onclick="executeAction('sort-az')">🔤 Ordenar A-Z</button>
-                <button class="btn btn-secondary" onclick="executeAction('sort-za')">🔤 Ordenar Z-A</button>
-            </div>
-        </div>
 
-        <div class="preview-area">
-            <div class="preview-label">👁️ Monitor de Alterações Dinâmico (Top 5 amostras)</div>
-            <div class="preview-container">
-                <div>
-                    <div class="preview-label" style="color:var(--warning)">Antes</div>
-                    <div class="preview-box preview-before" id="previewBefore"></div>
-                </div>
-                <div>
-                    <div class="preview-label" style="color:var(--success)">Após Aplicação</div>
-                    <div class="preview-box preview-after" id="previewAfter"></div>
+            <!-- EXPORTAÇÃO EXCLUSIVA DE SCRIPT DE RENOMEAÇÃO REAL -->
+            <div class="config-subpanel">
+                <label class="form-group"><span style="font-size:0.8rem; font-weight:600; color:var(--text-dim)">💻 GERADOR DE SCRIPTS OPERACIONAIS (SISTEMA REAL)</span></label>
+                <p class="hint">Como navegadores não alteram arquivos do HD por segurança, gere um script automatizado pronto para rodar na sua pasta de arquivos!</p>
+                <div class="form-row">
+                    <button class="btn btn-secondary" onclick="generateRenamerScript('sh')" style="gap:0.4rem;">
+                        <svg viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 10h2v2H7v-2zm4 0h6v2h-6v-2z"/></svg>
+                        Script Mac / Linux (.sh)
+                    </button>
+                    <button class="btn btn-secondary" onclick="generateRenamerScript('bat')" style="gap:0.4rem;">
+                        <svg viewBox="0 0 24 24" style="width:16px; height:16px;"><path d="M3 3h18v18H3V3zm16 16V5H5v14h14zM7 10h2v2H7v-2zm4 0h6v2h-6v-2z"/></svg>
+                        Script Windows (.bat)
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- PREVIEW EM FLUXO CONECTADO -->
+<div class="preview-section" style="max-width: 100%; margin-left: auto; margin-right: auto; padding: 0 0.2rem; margin-top: 1.5rem;">
+    <div class="card">
+        <h2>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+            Monitor de Alterações (Live Preview)
+        </h2>
+        <div class="preview-flow-list" id="previewFlowList">
+            <!-- Injetado dinamicamente via JS -->
+        </div>
+    </div>
+</div>
+
 <footer>
     <div class="stats">
-        <div>Nomes Capturados: <span class="stat-value" id="statLines">0</span></div>
-        <div>Total de Bytes/Chars: <span class="stat-value" id="statChars">0</span></div>
+        <div>Total de Nomes: <span class="stat-value" id="statLines">0</span></div>
+        <div>Caracteres Alocados: <span class="stat-value" id="statChars">0</span></div>
     </div>
     <div class="footer-actions">
-        <button class="btn btn-secondary" id="btnUndo" onclick="historyUndo()" disabled>↶ Desfazer</button>
-        <button class="btn btn-secondary" id="btnRedo" onclick="historyRedo()" disabled>↷ Refazer</button>
-        <button class="btn btn-secondary" onclick="copyToClipboard()">📋 Copiar Tudo</button>
-        <button class="btn btn-danger" onclick="clearAllData()">🗑️ Resetar</button>
-        <button class="btn btn-success" onclick="downloadOutputText()">💾 Exportar .txt</button>
+        <button class="btn btn-secondary" id="btnUndo" onclick="handleUndo()" disabled>↶ Desfazer</button>
+        <button class="btn btn-secondary" id="btnRedo" onclick="handleRedo()" disabled>↷ Refazer</button>
+        <button class="btn btn-secondary" onclick="copyResultList()">📋 Copiar Tudo</button>
+        <button class="btn btn-danger" onclick="wipeAllData()">🗑️ Limpar</button>
+        <button class="btn btn-success" onclick="downloadResultTxt()">💾 Baixar Lista .txt</button>
     </div>
 </footer>
 
 <script>
-// ==================== ENGINE DE ESTADO E HISTÓRICO MESTRE ====================
-const state = {
-    history: [],
+// MANAGEMENT OF THE STATE AND HISTORY STACK
+const appState = {
+    historyStack: [],
     pointer: -1
 };
 
-function saveState(snapshotName) {
-    const currentVal = document.getElementById('inputText').value;
-    // Se houver ramificação após um Undo, corta os estados seguintes
-    if (state.pointer < state.history.length - 1) {
-        state.history = state.history.slice(0, state.pointer + 1);
+function pushSnapshot(label) {
+    const textVal = document.getElementById('inputText').value;
+    if (appState.pointer < appState.historyStack.length - 1) {
+        appState.historyStack = appState.historyStack.slice(0, appState.pointer + 1);
     }
-    state.history.push({ content: currentVal, label: snapshotName });
-    state.pointer++;
+    appState.historyStack.push({ content: textVal, action: label });
+    appState.pointer++;
     
-    if (state.history.length > 40) {
-        state.history.shift();
-        state.pointer--;
+    if (appState.historyStack.length > 30) {
+        appState.historyStack.shift();
+        appState.pointer--;
     }
-    updateHistoryButtons();
+    renderHistoryControls();
 }
 
-function historyUndo() {
-    if (state.pointer > 0) {
-        state.pointer--;
-        document.getElementById('inputText').value = state.history[state.pointer].content;
-        processRealtimeFeedback();
-        updateHistoryButtons();
-        showToast(`Desfeito: ${state.history[state.pointer + 1].label}`, 'info');
-    }
-}
-
-function historyRedo() {
-    if (state.pointer < state.history.length - 1) {
-        state.pointer++;
-        document.getElementById('inputText').value = state.history[state.pointer].content;
-        processRealtimeFeedback();
-        updateHistoryButtons();
-        showToast(`Refito: ${state.history[state.pointer].label}`, 'info');
+function handleUndo() {
+    if (appState.pointer > 0) {
+        appState.pointer--;
+        document.getElementById('inputText').value = appState.historyStack[appState.pointer].content;
+        updateLivePreview();
+        renderHistoryControls();
+        triggerToast(`Desfeito: ${appState.historyStack[appState.pointer + 1].action}`, 'warning');
     }
 }
 
-function updateHistoryButtons() {
-    document.getElementById('btnUndo').disabled = state.pointer <= 0;
-    document.getElementById('btnRedo').disabled = state.pointer >= state.history.length - 1;
+function handleRedo() {
+    if (appState.pointer < appState.historyStack.length - 1) {
+        appState.pointer++;
+        document.getElementById('inputText').value = appState.historyStack[appState.pointer].content;
+        updateLivePreview();
+        renderHistoryControls();
+        triggerToast(`Refito: ${appState.historyStack[appState.pointer].action}`, 'success');
+    }
 }
 
-// ==================== CORE DE EXECUÇÃO MULTI-ABA ====================
-function executeAction(actionGroup) {
-    const mainInput = document.getElementById('inputText');
-    if (!mainInput.value.trim()) {
-        showToast('Insira dados na lista base antes de processar.', 'warning');
+function renderHistoryControls() {
+    document.getElementById('btnUndo').disabled = appState.pointer <= 0;
+    document.getElementById('btnRedo').disabled = appState.pointer >= appState.historyStack.length - 1;
+}
+
+// BATCH CONVERSION CORE ENGINE
+function executeBatchAction(actionType) {
+    const inputEl = document.getElementById('inputText');
+    if (!inputEl.value.trim()) {
+        triggerToast('Sua lista está vazia atualmente!', 'error');
         return;
     }
-    
-    const lines = mainInput.value.split('\n');
-    let processedLines = [];
-    
-    if (actionGroup === 'clean-empty') {
-        processedLines = lines.filter(l => l.trim() !== '');
-    } else if (actionGroup === 'clean-dup') {
-        processedLines = [...new Set(lines)];
-    } else if (actionGroup === 'sort-az') {
-        processedLines = [...lines].sort((a, b) => a.localeCompare(b, undefined, {numeric: true, sensitivity: 'base'}));
-    } else if (actionGroup === 'sort-za') {
-        processedLines = [...lines].sort((a, b) => b.localeCompare(a, undefined, {numeric: true, sensitivity: 'base'}));
+
+    const lines = inputEl.value.split('\n');
+    let output = [];
+
+    if (actionType === 'clean-empty') {
+        output = lines.filter(l => l.trim() !== '');
+    } else if (actionType === 'clean-dup') {
+        output = [...new Set(lines)];
+    } else if (actionType === 'sort-az') {
+        output = [...lines].sort((a,b) => a.localeCompare(b, undefined, {numeric: true}));
+    } else if (actionType === 'sort-za') {
+        output = [...lines].sort((a,b) => b.localeCompare(a, undefined, {numeric: true}));
     } else {
-        processedLines = lines.map((line, index) => processSingleLineEngine(line, index, actionGroup));
+        output = lines.map((l, idx) => processLineTransformation(l, idx, actionType));
     }
-    
-    mainInput.value = processedLines.join('\n');
-    saveState(`Ação: ${actionGroup}`);
-    processRealtimeFeedback();
-    showToast('Operação realizada com sucesso!', 'success');
+
+    inputEl.value = output.join('\n');
+    pushSnapshot(actionType);
+    updateLivePreview();
+    triggerToast('Modificação em lote aplicada com sucesso!', 'success');
 }
 
-// ==================== ENGINE INDIVIDUAL DE TRATAMENTO DE LINHA ====================
-function processSingleLineEngine(line, index, activeTab) {
+// LINE TREATMENT CORE ENGINE
+function processLineTransformation(line, index, activeTab) {
+    if (!line.trim() && activeTab !== 'number') return line;
+    
     const preserveExt = document.getElementById('globalPreserveExt').checked;
-    let namePart = line;
-    let extPart = '';
-    
-    // Tratamento de Extensão
+    let name = line;
+    let ext = '';
+
     if (preserveExt && line.includes('.') && !line.endsWith('.')) {
-        const lastDot = line.lastIndexOf('.');
-        namePart = line.substring(0, lastDot);
-        extPart = line.substring(lastDot);
+        const dotIndex = line.lastIndexOf('.');
+        name = line.substring(0, dotIndex);
+        ext = line.substring(dotIndex);
     }
-    
-    let result = namePart;
-    
+
+    let modified = name;
+
     switch(activeTab) {
         case 'find':
-            const fText = document.getElementById('findText').value;
-            const rText = document.getElementById('replaceText').value;
-            if (!fText) return line;
-            
+            const findVal = document.getElementById('findText').value;
+            const replaceVal = document.getElementById('replaceText').value;
+            if (!findVal) return line;
+
             const isRegex = document.getElementById('findRegex').checked;
-            const isCase = document.getElementById('findCase').checked;
+            const matchCase = document.getElementById('findCase').checked;
+
             try {
-                let rx = isRegex ? new RegExp(fText, isCase ? 'g' : 'gi') : new RegExp(fText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), isCase ? 'g' : 'gi');
-                result = result.replace(rx, rText);
+                let flags = matchCase ? 'g' : 'gi';
+                let pattern = isRegex ? new RegExp(findVal, flags) : new RegExp(findVal.replace(/[.*+?^${}()|[\]\‍]/g, '\\$&'), flags);
+                modified = modified.replace(pattern, replaceVal);
             } catch(e) { return line; }
             break;
-            
+
         case 'transform':
-            const type = document.getElementById('transformType').value;
-            result = runModifierTransform(result, type);
+            const mode = document.getElementById('transformType').value;
+            modified = runTransformerCalculation(modified, mode);
             break;
-            
+
         case 'number':
-            const start = parseInt(document.getElementById('numStart').value) || 1;
-            const digits = parseInt(document.getElementById('numDigits').value) || 2;
-            const sep = document.getElementById('numSeparator').value;
-            const pos = document.getElementById('numPosition').value;
-            
-            const numStr = String(start + index).padStart(digits, '0');
-            result = (pos === 'prefix') ? (numStr + sep + result) : (result + sep + numStr);
+            const startVal = parseInt(document.getElementById('numStart').value) || 1;
+            const paddingDigits = parseInt(document.getElementById('numDigits').value) || 2;
+            const separator = document.getElementById('numSep').value;
+            const position = document.getElementById('numPos').value;
+
+            const serializedNum = String(startVal + index).padStart(paddingDigits, '0');
+            modified = (position === 'prefix') ? (serializedNum + separator + modified) : (modified + separator + serializedNum);
             break;
-            
-        case 'filter':
-            const filterText = document.getElementById('filterText').value;
-            if (!filterText) return line;
-            const fReg = document.getElementById('filterRegex').checked;
-            const fCase = document.getElementById('filterCase').checked;
-            const fInvert = document.getElementById('filterInvert').checked;
-            
-            let matchRx = fReg ? new RegExp(filterText, fCase ? '' : 'i') : new RegExp(filterText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), fCase ? '' : 'i');
-            let matched = matchRx.test(line); // O filtro avalia a linha completa incluindo extensão
-            if (fInvert) matched = !matched;
-            if (matched) return null; // Será dropado no map dinâmico posterior
-            return line;
     }
-    
-    return result + extPart;
+
+    return modified + ext;
 }
 
-// Executa as lógicas da sub-seleção de modificadores estruturais
-function runModifierTransform(text, mode) {
+function runTransformerCalculation(text, mode) {
     switch(mode) {
-        case 'case-upper': return text.toUpperCase();
-        case 'case-lower': return text.toLowerCase();
-        case 'case-title': return text.toLowerCase().replace(/(?:^|\s)\S/g, char => char.toUpperCase());
-        case 'case-slug': 
+        case 'upper': return text.toUpperCase();
+        case 'lower': return text.toLowerCase();
+        case 'title': return text.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+        case 'slug':
             return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
                        .replace(/[^a-zA-Z0-9\s-_]/g, '')
                        .trim().replace(/\s+/g, '-').toLowerCase();
-                       
-        case 'insert-text':
+        case 'insert':
             const insText = document.getElementById('t_insertText').value;
             const insPos = document.getElementById('t_insertPos').value;
-            if (insPos === 'start') return insText + text;
-            if (insPos === 'end') return text + insText;
-            if (insPos === 'custom') {
-                const idx = Math.min(Math.max(0, parseInt(document.getElementById('t_insertIndex').value) || 0), text.length);
-                return text.substring(0, idx) + insText + text.substring(idx);
-            }
-            return text;
-            
-        case 'delete-chars':
-            const dCount = parseInt(document.getElementById('t_delCount').value) || 0;
-            const dDir = document.getElementById('t_delDir').value;
-            if (dCount >= text.length) return '';
-            return dDir === 'start' ? text.substring(dCount) : text.substring(0, text.length - dCount);
-            
-        case 'delete-position':
-            const pStart = Math.min(Math.max(0, parseInt(document.getElementById('t_posStart').value) || 0), text.length);
-            const pCount = parseInt(document.getElementById('t_posCount').value) || 0;
-            if (document.getElementById('t_posUntilEnd').checked) return text.substring(0, pStart);
-            return text.substring(0, pStart) + text.substring(pStart + pCount);
-            
+            return insPos === 'start' ? insText + text : text + insText;
+        case 'trim-chars':
+            const count = parseInt(document.getElementById('t_trimCount').value) || 0;
+            const dir = document.getElementById('t_trimDir').value;
+            if (count >= text.length) return '';
+            return dir === 'start' ? text.substring(count) : text.substring(0, text.length - count);
         case 'crop-marker':
-            const token = document.getElementById('t_markerToken').value;
-            if (!token) return text;
-            const strat = document.getElementById('t_markerStrategy').value;
-            const inc = document.getElementById('t_markerInclude').checked;
+            const marker = document.getElementById('t_marker').value;
+            if (!marker) return text;
+            const action = document.getElementById('t_markerAction').value;
+            const include = document.getElementById('t_markerInclude').checked;
+            const mIndex = text.indexOf(marker);
+            if (mIndex === -1) return text;
             
-            let index = (strat.startsWith('all-')) ? text.lastIndexOf(token) : text.indexOf(token);
-            if (index === -1) return text;
-            
-            if (strat.includes('before')) {
-                return inc ? text.substring(index + token.length) : text.substring(index);
+            if (action === 'before') {
+                return include ? text.substring(mIndex + marker.length) : text.substring(mIndex);
             } else {
-                return inc ? text.substring(0, index) : text.substring(0, index + token.length);
+                return include ? text.substring(0, mIndex) : text.substring(0, mIndex + marker.length);
             }
     }
     return text;
 }
 
-// Wrapper adaptativo para limpar nulos gerados pelo filtro de exclusão em massa
-const nativeMap = Array.prototype.map;
-function executeActionWithFilterDrop(actionGroup) {
-    if (actionGroup !== 'filter') return;
-}
-
-// Interceptador global do fluxo das ações padrões para tratar deleção de linhas do filtro
-const originalExecute = executeAction;
-executeAction = function(actionGroup) {
-    if (actionGroup === 'filter') {
-        const mainInput = document.getElementById('inputText');
-        if (!mainInput.value.trim()) return;
-        const lines = mainInput.value.split('\n');
-        const processed = lines.map((l, i) => processSingleLineEngine(l, i, 'filter')).filter(l => l !== null);
-        mainInput.value = processed.join('\n');
-        saveState("Filtro de Remoção");
-        processRealtimeFeedback();
-        showToast('Linhas filtradas!', 'success');
-    } else {
-        originalExecute(actionGroup);
-    }
-}
-
-// ==================== INTERRUPÇÃO DE EVENTOS DE UI (TABS ESTÁTICAS) ====================
-function switchTab(e, targetId) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    e.target.classList.add('active');
-    document.getElementById(targetId).classList.add('active');
-    processRealtimeFeedback();
-}
-
-function toggleTransformFields() {
-    const selected = document.getElementById('transformType').value;
-    document.querySelectorAll('.config-subpanel').forEach(panel => panel.style.display = 'none');
+// LIVE PREVIEW DYNAMIC RENDERING
+function updateLivePreview() {
+    const txt = document.getElementById('inputText').value;
+    const lines = txt.split('\n').filter(l => l !== '');
     
-    const activePanel = document.getElementById(`panel-${selected}`);
-    if (activePanel) activePanel.style.display = 'flex';
-    processRealtimeFeedback();
-}
+    document.getElementById('statLines').textContent = txt.trim() ? txt.split('\n').length : 0;
+    document.getElementById('statChars').textContent = txt.length;
 
-// ==================== GESTÃO DE PREVIEW DINÂMICO E REATIVO ====================
-function processRealtimeFeedback() {
-    const rawText = document.getElementById('inputText').value;
-    const lines = rawText.split('\n').filter(l => l !== "");
-    
-    // Atualiza Painel de Estatísticas Fiel
-    document.getElementById('statLines').textContent = rawText.trim() ? rawText.split('\n').length : 0;
-    document.getElementById('statChars').textContent = rawText.length;
-    
-    const bBox = document.getElementById('previewBefore');
-    const aBox = document.getElementById('previewAfter');
-    
+    const previewContainer = document.getElementById('previewFlowList');
+    previewContainer.innerHTML = '';
+
     if (lines.length === 0) {
-        bBox.innerHTML = `<span style="color: var(--text-dim)">Vazio...</span>`;
-        aBox.innerHTML = `<span style="color: var(--text-dim)">Vazio...</span>`;
+        previewContainer.innerHTML = '<div style="color:var(--text-dim); text-align:center; padding:2rem; font-size:0.9rem;">Nenhum arquivo na fila para monitoramento.</div>';
         return;
     }
-    
-    const samples = lines.slice(0, 5);
-    bBox.innerHTML = samples.map(l => `<div class="preview-line">${escapeHTML(l)}</div>`).join('');
-    
-    // Detecta qual aba está ativa para simular a prévia correspondente
-    let currentActiveTab = 'find';
-    if (document.getElementById('tab-transform').classList.contains('active')) currentActiveTab = 'transform';
-    if (document.getElementById('tab-number').classList.contains('active')) currentActiveTab = 'number';
-    if (document.getElementById('tab-filter').classList.contains('active')) currentActiveTab = 'filter';
-    
-    const simulated = samples.map((l, i) => processSingleLineEngine(l, i, currentActiveTab)).filter(l => l !== null);
-    
-    aBox.innerHTML = simulated.map((line, idx) => {
-        const isChanged = line !== samples[idx];
-        return `<div class="preview-line ${isChanged ? 'changed' : ''}">${escapeHTML(line)}</div>`;
-    }).join('');
+
+    let currentTab = 'find';
+    if (document.getElementById('tab-transform').classList.contains('active')) currentTab = 'transform';
+    if (document.getElementById('tab-number').classList.contains('active')) currentTab = 'number';
+    if (document.getElementById('tab-filter').classList.contains('active')) currentTab = 'filter';
+
+    // Amostra de até 50 itens para não travar a UI caso haja 10 mil linhas
+    const itemsToPreview = lines.slice(0, 50);
+
+    itemsToPreview.forEach((line, idx) => {
+        let transformed = currentTab === 'filter' ? line : processLineTransformation(line, idx, currentTab);
+        let isChanged = transformed !== line;
+
+        const row = document.createElement('div');
+        row.className = `preview-flow-item ${isChanged ? 'changed' : 'no-change'}`;
+        
+        row.innerHTML = `
+            <div class="preview-flow-index">#${String(idx + 1).padStart(2, '0')}</div>
+            <div class="preview-flow-before" title="${escapeHtmlString(line)}">${escapeHtmlString(line)}</div>
+            <div class="preview-flow-arrow">
+                <svg viewBox="0 0 24 24"><path d="M16.01 11H4v2h12.01v3L20 12l-3.99-4z"/></svg>
+            </div>
+            <div class="preview-flow-after" title="${escapeHtmlString(transformed)}">${escapeHtmlString(transformed)}</div>
+        `;
+        previewContainer.appendChild(row);
+    });
+
+    if (lines.length > 50) {
+        const extraRow = document.createElement('div');
+        extraRow.style.cssText = 'text-align:center; font-size:0.75rem; color:var(--text-dim); padding:0.5rem;';
+        extraRow.textContent = `... e mais ${lines.length - 50} itens ocultados do painel de prévia rápida ...`;
+        previewContainer.appendChild(extraRow);
+    }
 }
 
-function escapeHTML(str) {
-    return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+// THEME SYSTEM (LIGHT / DARK)
+function toggleTheme() {
+    const isLight = document.body.classList.toggle('light-mode');
+    localStorage.setItem('batch-theme', isLight ? 'light' : 'dark');
 }
 
-// ==================== CAPTURA DE ARQUIVOS (DRAG & DROP NATIVO) ====================
-function setupDragAndDrop() {
+// INITIALIZATION AND DRAG & DROP FULFILLMENT
+function initSystemComponents() {
+    const savedTheme = localStorage.getItem('batch-theme');
+    if (savedTheme === 'light') document.body.classList.add('light-mode');
+
     const zone = document.getElementById('dropZone');
-    const input = document.getElementById('fileInput');
-    
-    zone.addEventListener('click', () => input.click());
+    const inputFiles = document.getElementById('fileInput');
+
+    zone.addEventListener('click', () => inputFiles.click());
     zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
     zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
     zone.addEventListener('drop', e => {
         e.preventDefault();
         zone.classList.remove('dragover');
-        importFileNames(e.dataTransfer.files);
+        handleFileInjections(e.dataTransfer.files);
     });
-    input.addEventListener('change', e => importFileNames(e.target.files));
+    inputFiles.addEventListener('change', e => handleFileInjections(e.target.files));
+
+    // Monitoramento em tempo real
+    document.getElementById('inputText').addEventListener('input', updateLivePreview);
+    document.querySelectorAll('input, select').forEach(el => {
+        el.addEventListener('input', updateLivePreview);
+        el.addEventListener('change', updateLivePreview);
+    });
+
+    pushSnapshot('Estado Inicial');
+    updateLivePreview();
 }
 
-function importFileNames(fileList) {
-    if (fileList.length === 0) return;
-    const txtArea = document.getElementById('inputText');
-    const newNames = Array.from(fileList).map(f => f.name).join('\n');
+function handleFileInjections(files) {
+    if (files.length === 0) return;
+    const area = document.getElementById('inputText');
+    const collectedNames = Array.from(files).map(f => f.name).join('\n');
+
+    area.value = area.value.trim() ? area.value + '\n' + collectedNames : collectedNames;
+    pushSnapshot('Carregamento de Arquivos');
+    updateLivePreview();
+    triggerToast(`Sucesso! ${files.length} nomes inseridos na fila.`, 'success');
+}
+
+// AUXILIARY UTILITIES
+function switchTab(e, targetTabId) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    document.getElementById(targetTabId).classList.add('active');
+    updateLivePreview();
+}
+
+function toggleModifierPanels() {
+    const val = document.getElementById('transformType').value;
+    document.getElementById('mod-panel-insert').style.display = val === 'insert' ? 'flex' : 'none';
+    document.getElementById('mod-panel-trim-chars').style.display = val === 'trim-chars' ? 'flex' : 'none';
+    document.getElementById('mod-panel-crop-marker').style.display = val === 'crop-marker' ? 'flex' : 'none';
+    updateLivePreview();
+}
+
+function applyRegexPreset(selectEl) {
+    const preset = selectEl.value;
+    const findInput = document.getElementById('findText');
+    const chkRegex = document.getElementById('findRegex');
+
+    if (preset === 'numbers') {
+        findInput.value = '\\d+';
+        chkRegex.checked = true;
+    } else if (preset === 'special') {
+        findInput.value = '[^a-zA-Z0-9\\s.\\-_]';
+        chkRegex.checked = true;
+    } else if (preset === 'parentheses') {
+        findInput.value = '\\([^\\)]*\\)';
+        chkRegex.checked = true;
+    } else if (preset === 'spaces') {
+        findInput.value = ' {2,}';
+        chkRegex.checked = true;
+    }
+    updateLivePreview();
+}
+
+// KILLER FEATURE: GENUINE SCRIPT EXPORTATION (BASH / WINDOWS BAT)
+function generateRenamerScript(osType) {
+    const txt = document.getElementById('inputText').value;
+    const originalLines = appState.historyStack[0]?.content.split('\n') || [];
+    const currentLines = txt.split('\n');
+
+    if (!txt.trim() || originalLines.length !== currentLines.length) {
+        triggerToast('Gere ou mantenha a mesma paridade de linhas para exportar o script!', 'error');
+        return;
+    }
+
+    let scriptContent = '';
     
-    txtArea.value = txtArea.value.trim() ? txtArea.value + '\n' + newNames : newNames;
-    saveState("Importação de Arquivos");
-    processRealtimeFeedback();
-    showToast(`Adicionados ${fileList.length} nomes à lista!`, 'success');
+    if (osType === 'sh') {
+        scriptContent = '#!/bin/bash\n# Script de renomeação em lote gerado pelo Editor Pro\n';
+        originalLines.forEach((oldName, i) => {
+            let newName = currentLines[i];
+            if (oldName && newName && oldName !== newName) {
+                scriptContent += `mv "${oldName.replace(/"/g, '\\"')}" "${newName.replace(/"/g, '\\"')}"\n`;
+            }
+        });
+    } else if (osType === 'bat') {
+        scriptContent = '@echo off\r\nrem Script de renomeação em lote gerado pelo Editor Pro\r\n';
+        originalLines.forEach((oldName, i) => {
+            let newName = currentLines[i];
+            if (oldName && newName && oldName !== newName) {
+                // Sintaxe do Windows ren requer caminhos entre aspas simples/duplas
+                scriptContent += `ren "${oldName}" "${newName}"\r\n`;
+            }
+        });
+    }
+
+    const blob = new Blob([scriptContent], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = osType === 'sh' ? 'renomear_arquivos.sh' : 'renomear_arquivos.bat';
+    link.click();
+    triggerToast('Script baixado! Execute-o dentro da pasta alvo.', 'success');
 }
 
-// ==================== OPERAÇÕES GLOBAIS DE SUPORTE ====================
-function copyToClipboard() {
-    const text = document.getElementById('inputText').value;
-    if (!text) { showToast('Não há dados para copiar.', 'warning'); return; }
-    navigator.clipboard.writeText(text)
-        .then(() => showToast('Lista copiada para a área de transferência!', 'success'))
-        .catch(() => showToast('Falha ao copiar dados.', 'error'));
+function copyResultList() {
+    const val = document.getElementById('inputText').value;
+    if (!val) return;
+    navigator.clipboard.writeText(val).then(() => triggerToast('Copiado para o seu Clipboard!', 'success'));
 }
 
-function clearAllData() {
-    if (confirm('Tem certeza de que deseja limpar toda a lista e histórico?')) {
+function wipeAllData() {
+    if (confirm('Deseja resetar toda a lista de entrada?')) {
         document.getElementById('inputText').value = '';
-        state.history = [];
-        state.pointer = -1;
-        saveState("Estado Limpo");
-        processRealtimeFeedback();
-        showToast('Todo o painel foi resetado.', 'info');
+        appState.historyStack = [];
+        appState.pointer = -1;
+        pushSnapshot('Limpeza Completa');
+        updateLivePreview();
     }
 }
 
-function downloadOutputText() {
-    const text = document.getElementById('inputText').value;
-    if (!text.trim()) { showToast('Nada para exportar.', 'warning'); return; }
-    
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
+function downloadResultTxt() {
+    const val = document.getElementById('inputText').value;
+    if (!val.trim()) return;
+    const blob = new Blob([val], { type: 'text/plain;charset=utf-8' });
     const link = document.createElement('a');
-    link.href = url;
-    link.download = 'nomes_processados_lote.txt';
+    link.href = URL.createObjectURL(blob);
+    link.download = 'nomes_editados_lote.txt';
     link.click();
-    URL.revokeObjectURL(url);
-    showToast('Download do arquivo .txt iniciado!', 'success');
 }
 
-function showToast(message, type = 'info') {
-    const box = document.createElement('div');
-    box.className = `toast ${type}`;
-    box.textContent = message;
-    document.body.appendChild(box);
+function escapeHtmlString(string) {
+    return string.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+function triggerToast(msg, type = 'info') {
+    const el = document.createElement('div');
+    el.className = `toast ${type}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
     setTimeout(() => {
-        box.style.animation = 'slideIn 0.2s reverse forwards';
-        setTimeout(() => box.remove(), 200);
+        el.style.animation = 'slideIn 0.2s reverse forwards';
+        setTimeout(() => el.remove(), 250);
     }, 3000);
 }
 
-// Listener Reativo Global (Observa mudanças de inputs no painel para atualizar a prévia na hora)
-document.addEventListener('input', e => {
-    if (e.target.closest('.card') || e.target.id === 'globalPreserveExt') {
-        processRealtimeFeedback();
-    }
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-    setupDragAndDrop();
-    saveState("Início Limpo");
-    processRealtimeFeedback();
-});
+document.addEventListener('DOMContentLoaded', initSystemComponents);
 </script>
+
 </body>
 </html>
