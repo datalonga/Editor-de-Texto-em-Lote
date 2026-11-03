@@ -80,3 +80,33 @@ Reescrita completa do app ("Ultra Pro"). A v4.0 permanece em
 - Nomes com aspas simples/duplas geravam scripts quebrados no Bash/Windows.
 - Extensões eram perdidas quando o "replace" afetava o ponto final.
 - `toSafeFilename` deixava separadores nas bordas do nome.
+
+## [5.0.1] — 2026-11-03
+
+Fechamento das pendências da 5.0.0: versão arquivo único, correções de atalho e
+ícone, e a suíte de testes que faltava para os modais.
+
+### Adicionado
+- **Build de arquivo único**: `node tools/build-single.mjs` gera
+  `legacy/v5.single.html` (~424 KB) com CSS, JS, ícones e manifest embutidos —
+  roda de `file://`, pendrive ou e-mail, sem servidor e sem rede. Sem bundler e
+  sem dependências: o script resolve o grafo de imports e transforma cada módulo
+  em um escopo isolado.
+  - Detecta ciclos de import e aborta com mensagem clara.
+  - Verifica, no fim, que não sobrou nenhuma referência a `assets/`.
+  - Worker é trocado por fallback síncrono (arquivo único não pode instanciar
+    Worker a partir de outro arquivo); o Service Worker é desativado.
+- `npm run test:ui` — 10 testes de modal (Esc, backdrop, X, empilhamento, foco),
+  usando jsdom como dependência **opcional**: sem ela, a suíte é ignorada e
+  `npm test` continua sem instalar nada.
+- Aviso no console quando um nome de ícone não existe (`icons.js`), em vez de
+  cair silenciosamente no ícone `info`.
+
+### Corrigido
+- Ícone do passo "Cortar por marcador" apontava para `cut` (inexistente) e caía
+  no fallback; agora usa `scissors`.
+- `Ctrl+Shift+Z` estava mapeado duas vezes (refazer e modo foco). O modo foco
+  passou para **`Ctrl+Shift+M`**, com hint na paleta de comandos.
+- Documentação da pendência do `Esc`: o handler estava correto desde a 5.0.0 —
+  a falha relatada era artefato do jsdom (evento disparado em `window` não
+  alcança listeners de `document`). Agora coberto por teste automatizado.
