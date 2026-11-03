@@ -1,69 +1,92 @@
 ## Resumo
 
-Reescreve o Editor de Nomes/Texto em Lote (v4.0, um `index.html` monolítico de ~1.100 linhas)
-como **v5.0 Ultra**, em **HTML + CSS + JavaScript puro (ES Modules)**, sem build e sem
-dependências — pronto para GitHub Pages. A v4.0 fica preservada em `legacy/index.v4.0.html`.
+Fecha as pendências que ficaram abertas na v5.0.0 (PR #1). Nenhuma mudança de
+arquitetura: 3 correções cirúrgicas, 1 artefato novo (arquivo único) e a suíte de
+testes que faltava para os modais.
 
 ## O que muda
 
-| | v4.0 | v5.0 |
-|---|---|---|
-| Estrutura | 1 arquivo | 30+ módulos com responsabilidade única |
-| Transformações | 1 aba por vez | pipeline encadeado, reordenável, salvável como receita |
-| Preview | 50 linhas, sem virtualização | lista virtualizada própria |
-| Histórico | 30 snapshots de texto | 120 snapshots + timeline navegável |
-| Scripts | `.sh` / `.bat` | `.sh`, `.bat`, `.ps1`, `.py`, `.mjs` com dry-run, backup e log |
-| Performance | thread principal | Web Worker acima de 2.500 linhas |
+### 1. Versão arquivo único (`legacy/v5.single.html`)
 
-## Destaques
+`npm run build` gera **um** `.html` de ~424 KB com CSS, os 27 módulos JS, os
+ícones e o manifest embutidos — roda de `file://`, pendrive, e-mail ou intranet
+sem servidor.
 
-- **Pipeline visual** com 13 tipos de passo: find/replace (regex, grupos, testador embutido),
-  case/limpeza (camelCase, snake_case, slug, acentos…), afixos, aparar, cortar por marcador,
-  numeração (zeros, grupos, alfabético), colunas/CSV, condicional, template, limite de
-  comprimento, ordenar, deduplicar e remover vazias.
-- **Receitas**: 12 presets embutidos + salvar/exportar/importar JSON.
-- **Preview** com diff inline, filtros (alterados/problemas/removidos), busca instantânea,
-  trava por linha e estatísticas ricas.
-- **Exportação**: 5 linguagens de script com escaping específico por shell, lista em
-  `.txt/.csv/.tsv/.json/.md` e renomeação real via File System Access API (com dry-run).
-- **Nomes**: validação Windows/macOS/Linux, nomes reservados, conflitos e preservação de
-  extensão (incluindo `arquivo.tar.gz` e dotfiles).
-- **UX**: paleta de comandos (Ctrl+K), painéis redimensionáveis, modo foco, tema
-  dark/light/system, 6 cores de destaque, mobile-first, ARIA e PWA offline.
-- **Arquitetura**: `core/` 100% puro (sem DOM) → engine testável e executável em Web Worker.
+O gerador (`tools/build-single.mjs`) não é um bundler genérico, e sim um
+resolvedor de grafo sob medida:
+
+- percorre os imports a partir de `assets/js/app/main.js` em ordem topológica;
+- transforma cada módulo em um escopo isolado (`(() => { … return {…} })()`),
+  com `export` removido e imports virando referências ao namespace;
+- **aborta com mensagem clara se houver ciclo** de imports (hoje: 0);
+- verifica no fim que não sobrou nenhuma referência a `assets/` e falha se sobrar;
+- troca o Worker por fallback síncrono e desativa o Service Worker (arquivo único
+  não pode registrar `sw.js` nem instanciar Worker de outro arquivo);
+- **é determinístico**: sem timestamp no banner, rodar duas vezes não gera diff.
+
+### 2. `Ctrl+Shift+Z` mapeado duas vezes
+
+A lista de atalhos anunciava `Ctrl+Shift+Z` como *refazer* **e** como *modo foco*.
+Só o redo funcionava. O modo foco passou para **`Ctrl+Shift+M`**, com hint na
+paleta de comandos.
+
+### 3. Ícone inexistente no passo "Cortar por marcador"
+
+`STEP_META.crop.icon` era `'cut'`, que não existe em `icons.js`, e caía
+silenciosamente no fallback `info`. Agora usa `'scissors'`, e o fallback passou a
+emitir `console.warn` — nome errado é bug de código, não deve passar despercebido.
+
+### 4. `Esc` nos modais — investigado e coberto por teste
+
+O handler estava **correto** desde a v5.0.0. A falha relatada era artefato do
+ambiente de teste: o jsdom não entrega eventos disparados em `window` para
+listeners de `document` com `capture: true`. A suíte nova (`npm run test:ui`,
+10 casos) prova o comportamento: Esc fecha só o modal do topo, clique no backdrop
+fecha, clique no conteúdo não, `onClose` roda uma vez, foco volta à origem e o
+Tab fica preso no modal.
+
+> jsdom é dependência **opcional de teste**. Sem ela, `npm run test:ui` marca 10
+> testes como *skipped* e `npm test` continua sem instalar nada.
 
 ## Testes
 
-- `npm test` → **41 testes** (`node --test`, sem instalar nada): engine, case, regex,
-  numeração, templates, colunas, dedupe, sort, condicionais, validação, escaping dos
-  geradores de script, parsers, todas as receitas e performance com 20 mil linhas.
-- Suítes de runtime em jsdom: 13 editores de passo, 12 receitas, undo/redo, lock de linhas,
-  unicode, nomes inválidos, diálogos, atalhos e persistência — 0 erros de console.
+| Suíte | Resultado |
+|---|---|
+| `npm test` (núcleo) | **41 pass / 0 fail** |
+| `npm run test:ui` (jsdom) | **10 pass / 0 fail** |
+| smoke do app modular (jsdom) | **9 pass / 0 fail** |
+| execução do single-file (jsdom) | **15 pass / 0 fail** |
+| `npm run build` | 0 referências externas a `assets/` ✔ |
 
-## Bugs corrigidos no caminho
+O smoke do single-file monta o app dentro do jsdom a partir do arquivo gerado,
+digita três nomes e confirma que o preview reage. O smoke modular confirma que
+os patches não quebraram nada: os 13 ícones de `STEP_META` existem, `Ctrl+Shift+M`
+alterna o modo foco e o Esc fecha um modal por vez no app real.
 
-labels órfãos nos campos (acessibilidade), perda de foco ao digitar dentro de um passo,
-perda de caracteres no textarea durante o debounce, `toSafeFilename` deixando separadores
-nas bordas, slug gerando nome vazio com unicode não-latino, regex `\p{...}` exigindo flag
-`u`, scroll saltando no recálculo do preview e `sort` não propagando a nova ordem para a
-lista de entrada.
+## Bug encontrado no caminho (e que valia a pena)
+
+A primeira versão do build gerou um arquivo corrompido **silenciosamente**: o
+bundle contém `'\\$&'` (escaping de regex do core) e `String.replace` interpreta
+`$&` como padrão de substituição, injetando `<script type="module" src="...">`
+dentro de duas funções de escape. Sintoma: JS inválido só dentro do HTML gerado.
+Corrigido usando funções replacer em toda inserção de conteúdo gerado — e o
+`node --check` do bundle extraído virou parte da validação.
 
 ## Como testar
 
 ```bash
-python3 -m http.server 5173   # ou simplesmente abrir index.html
-npm test
+npm test                          # núcleo
+npm i -D jsdom && npm run test:ui # modais
+npm run build                     # regenera legacy/v5.single.html
+open legacy/v5.single.html        # arquivo único, direto do disco
 ```
 
-## Notas
+## Arquivos
 
-- Sem backend por design: nenhum dado sai do navegador.
-- Deploy: *Settings → Pages → Deploy from a branch → main / root* (caminhos relativos,
-  funciona em subpastas).
-- Pendência conhecida: falta validar em navegador real o fechamento de modais por `Esc`
-  (o teste em jsdom não reproduz o handler de captura; X e clique no backdrop funcionam).
-
-## Commits
-
-15 commits agrupados por área — `core` (3), `ui` (5), `app` (1), assets/PWA (2),
-testes (1), docs (1), configuração (1) e preservação da v4.0.
+- `tools/build-single.mjs` (novo) — gerador sem dependências
+- `legacy/v5.single.html` (novo, gerado) — app em arquivo único
+- `tests/modal.test.mjs` (novo) — 10 testes de modal
+- `assets/js/core/steps.js`, `assets/js/ui/icons.js` — ícone `scissors` + aviso
+- `assets/js/ui/dialogs.js`, `assets/js/app/app.js` — atalho do modo foco
+- `package.json` — versão 5.0.1 e scripts `build` / `test:ui`
+- `README.md`, `CHANGELOG.md` — documentação das mudanças
