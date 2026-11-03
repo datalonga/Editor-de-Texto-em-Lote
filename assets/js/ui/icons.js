@@ -100,8 +100,13 @@ const PATHS = {
  */
 export function icon(name, options = {}) {
   const { size = 14, stroke = 2, className = '' } = options;
-  const body = PATHS[name] ?? PATHS.info;
-  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${className}">${body}</svg>`;
+  // Fallback para `info` mantém a UI íntegra se um nome faltar, mas avisamos
+  // no console: um ícone inexistente é bug de código, não erro do usuário.
+  const body = PATHS[name];
+  if (!body && typeof console !== 'undefined') {
+    console.warn(`[icons] ícone desconhecido: "${name}"`);
+  }
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" class="${className}">${body ?? PATHS.info}</svg>`;
 }
 
 /** Versão como elemento DOM (para inserir via appendChild). */

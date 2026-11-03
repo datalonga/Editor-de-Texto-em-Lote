@@ -38,7 +38,7 @@ export const STEP_META = {
     label: 'Cortar por marcador',
     description: 'Tesoura baseada em um texto marcador',
     color: 'var(--danger)',
-    icon: 'cut',
+    icon: 'scissors',
   },
   numbering: {
     label: 'Numeração sequencial',
