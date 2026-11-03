@@ -305,7 +305,8 @@ async function build() {
   Editor de Texto em Lote Ultra v5 — VERSÃO ARQUIVO ÚNICO (gerada)
   Fonte: index.html + assets/css/styles.css + ${order.length} módulos de assets/js
   NÃO EDITE ESTE ARQUIVO À MÃO. Rode: node tools/build-single.mjs
-  Gerado em: ${new Date().toISOString()}
+  Build determinístico: sem timestamp, para que rodar o script duas vezes
+  não gere diff. Use \`git log\` para saber quando foi gerado.
 -->
 `;
 
