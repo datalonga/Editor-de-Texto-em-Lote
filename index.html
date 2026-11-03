@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Editor de Texto em Lote Ultra v5</title>
+    <meta
+      name="description"
+      content="Editor de nomes e textos em lote: pipeline de transformações, preview ao vivo, validação de nomes e geração de scripts de renomeação. 100% no navegador, sem upload."
+    />
+    <meta name="theme-color" content="#0b0b0f" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Editor de Texto em Lote Ultra v5" />
+    <meta
+      property="og:description"
+      content="Transforme listas de nomes com um pipeline visual e gere scripts de renomeação seguros. Tudo local, sem instalar nada."
+    />
+
+    <!-- PWA -->
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/icons/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icons/icon-192.png" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="assets/css/styles.css" />
+
+    <!-- Executado antes do primeiro paint para evitar "flash" de tema errado. -->
+    <script>
+      (function () {
+        try {
+          var raw = localStorage.getItem('editor-texto-lote-v5');
+          var prefs = raw ? (JSON.parse(raw).preferences || {}) : {};
+          var mode = prefs.theme || 'system';
+          var resolved =
+            mode === 'system'
+              ? window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'light'
+                : 'dark'
+              : mode;
+          var root = document.documentElement;
+          root.classList.remove('dark', 'light');
+          root.classList.add(resolved);
+          if (prefs.reducedMotion) root.classList.add('reduced-motion');
+
+          var accents = {
+            violet: ['#a78bfa', '#8b5cf6', 'rgba(167,139,250,0.14)'],
+            blue: ['#60a5fa', '#3b82f6', 'rgba(96,165,250,0.14)'],
+            emerald: ['#34d399', '#10b981', 'rgba(52,211,153,0.14)'],
+            amber: ['#fbbf24', '#f59e0b', 'rgba(251,191,36,0.14)'],
+            rose: ['#fb7185', '#f43f5e', 'rgba(251,113,133,0.14)'],
+            cyan: ['#22d3ee', '#06b6d4', 'rgba(34,211,238,0.14)']
+          };
+          var accent = accents[prefs.accent] || accents.violet;
+          root.style.setProperty('--accent', accent[0]);
+          root.style.setProperty('--accent-strong', accent[1]);
+          root.style.setProperty('--accent-soft', accent[2]);
+        } catch (e) {
+          /* primeira visita / storage bloqueado: mantém o padrão escuro */
+        }
+      })();
+    </script>
+  </head>
+
+  <body>
+    <div class="app" id="app">
+      <!-- Conteúdo montado por assets/js/app/app.js (progressive enhancement). -->
+      <noscript>
+        <div style="padding: 40px; text-align: center; font-family: system-ui">
+          <h1>Editor de Texto em Lote Ultra v5</h1>
+          <p>Este app precisa de JavaScript habilitado — todo o processamento roda no seu navegador.</p>
+        </div>
+      </noscript>
+    </div>
+
+    <div class="top-progress" data-progress><span></span></div>
+
+    <script type="module" src="assets/js/app/main.js"></script>
+  </body>
+</html>
