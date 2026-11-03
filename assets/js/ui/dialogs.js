@@ -16,7 +16,6 @@ export const SHORTCUTS = [
   { combo: 'Ctrl + Z', description: 'Desfazer', group: 'Histórico' },
   { combo: 'Ctrl + Shift + Z', description: 'Refazer', group: 'Histórico' },
   { combo: 'Ctrl + Y', description: 'Refazer (alternativo)', group: 'Histórico' },
-  { combo: 'Ctrl + Shift + H', description: 'Timeline do histórico', group: 'Histórico' },
   { combo: 'Ctrl + Enter', description: 'Aplicar pipeline na lista', group: 'Ações' },
   { combo: 'Ctrl + E', description: 'Exportar / gerar script', group: 'Ações' },
   { combo: 'Ctrl + Shift + C', description: 'Copiar resultado', group: 'Ações' },
@@ -26,7 +25,7 @@ export const SHORTCUTS = [
   { combo: 'Ctrl + Alt + 1', description: 'Ir para Entrada', group: 'Navegação' },
   { combo: 'Ctrl + Alt + 2', description: 'Ir para Pipeline', group: 'Navegação' },
   { combo: 'Ctrl + Alt + 3', description: 'Ir para Resultado', group: 'Navegação' },
-  { combo: 'Ctrl + Shift + Z', description: 'Alternar modo foco (Zen)', group: 'Navegação' },
+  { combo: 'Ctrl + Shift + M', description: 'Alternar modo foco (Zen)', group: 'Navegação' },
 ];
 
 export function openShortcuts() {

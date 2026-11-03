@@ -639,7 +639,7 @@ export function bootstrap() {
       { id: 'save-recipe', label: 'Salvar pipeline como receita', group: 'Ações', icon: 'save', run: actions['save-recipe'] },
       { id: 'stats', label: 'Ver estatísticas', group: 'Visualizar', icon: 'scale', run: actions.stats },
       { id: 'timeline', label: 'Abrir timeline do histórico', group: 'Visualizar', hint: 'Ctrl Shift H', icon: 'history', run: actions.timeline },
-      { id: 'focus', label: 'Alternar modo foco (Zen)', group: 'Visualizar', icon: 'maximize', run: actions.focus },
+      { id: 'focus', label: 'Alternar modo foco (Zen)', group: 'Visualizar', hint: 'Ctrl Shift M', icon: 'maximize', run: actions.focus },
       { id: 'theme', label: 'Alternar tema (claro/escuro/sistema)', group: 'Visualizar', icon: 'sun', run: actions.theme },
       { id: 'accent', label: 'Trocar cor de destaque', group: 'Visualizar', icon: 'palette', run: actions.accent },
       { id: 'shortcuts', label: 'Ver atalhos de teclado', group: 'Ajuda', hint: 'Ctrl /', icon: 'keyboard', run: actions.shortcuts },
@@ -755,6 +755,11 @@ export function bootstrap() {
     } else if (key === 's' && event.shiftKey) {
       event.preventDefault();
       actions['save-recipe']();
+    } else if (key === 'm' && event.shiftKey) {
+      // Modo foco (Zen) em Ctrl+Shift+M: Ctrl+Shift+Z já é "refazer",
+      // e atalhos de sistema como janela minimizada ficam fora do padrão web.
+      event.preventDefault();
+      actions.focus();
     } else if (key === '/') {
       event.preventDefault();
       actions.shortcuts();
