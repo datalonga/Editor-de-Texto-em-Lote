@@ -1,0 +1,13 @@
+{
+  "name": "editor-de-texto-em-lote",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Editor de nomes/textos em lote — HTML, CSS e JS puro, sem build, pronto para GitHub Pages.",
+  "scripts": {
+    "dev": "npx --yes serve@14 . -l 5173",
+    "start": "npx --yes serve@14 . -l 5173",
+    "test": "node --test tests/core.test.js",
+    "check": "node --check assets/js/app/main.js"
+  }
+}

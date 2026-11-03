@@ -1,0 +1,23 @@
+{
+  "name": "Editor de Texto em Lote Ultra v5",
+  "short_name": "Lote Ultra",
+  "description": "Pipeline de transformações para listas de nomes, com preview ao vivo e geração de scripts de renomeação. 100% no navegador.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0b0f",
+  "theme_color": "#0b0b0f",
+  "categories": ["productivity", "utilities", "developer"],
+  "icons": [
+    { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Nova lista", "url": "./?action=new" },
+    { "name": "Receitas", "url": "./?action=recipes" }
+  ]
+}
