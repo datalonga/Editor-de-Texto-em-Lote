@@ -61,6 +61,19 @@ npx serve .
 Todos os caminhos são **relativos**, então funciona em subpastas sem configuração.
 O mesmo vale para Cloudflare Pages, Netlify, Vercel (static), S3, etc.
 
+### Versão arquivo único
+
+Precisa de **um** arquivo `.html` para pendrive, e-mail ou intranet sem servidor?
+
+```bash
+npm run build     # gera legacy/v5.single.html (~424 KB, tudo embutido)
+```
+
+O build embute CSS, os 27 módulos JS, os ícones e o manifest em `data:` URIs,
+e roda direto de `file://`. O Service Worker e o Web Worker são desativados
+(processamento volta para a thread principal). O arquivo é **gerado** — não
+edite à mão; rode o script de novo.
+
 ### Recursos
 
 #### Entrada
@@ -140,6 +153,7 @@ Você pode salvar seu pipeline como receita (localStorage) e **exportar/importar
 | `Ctrl Shift S` | Salvar receita |
 | `Ctrl Shift X` | Limpar tudo |
 | `Ctrl Shift L` | Carregar exemplo |
+| `Ctrl Shift M` | Alternar modo foco (Zen) |
 | `Ctrl /` | Lista de atalhos |
 | `Ctrl Alt 1/2/3` | Foco nos painéis Entrada / Pipeline / Resultado |
 | `Esc` | Fechar modal / sair do modo foco |
@@ -172,8 +186,11 @@ assets/
     worker/engine.worker.js  # cálculo em Web Worker
     app/                   #   orquestração e bootstrap
       app.js  main.js
+tools/build-single.mjs     # gera o arquivo único (sem bundler, sem deps)
 legacy/index.v4.0.html     # versão anterior preservada
-tests/core.test.js         # 41 testes (node --test)
+legacy/v5.single.html      # app inteiro em 1 arquivo (gerado por npm run build)
+tests/core.test.js         # 41 testes do núcleo (node --test)
+tests/modal.test.mjs       # 10 testes de modal (jsdom opcional)
 ```
 
 **Princípio central:** o *estado do usuário* (lista + pipeline + preferências) vive no
@@ -194,7 +211,8 @@ respostas obsoletas. A lista é virtualizada com um pool de nós reciclados.
 ### Testes
 
 ```bash
-npm test          # node --test tests/  (sem instalar nada)
+npm test          # 41 testes do núcleo (sem instalar nada)
+npm run test:ui   # 10 testes de modal — exige jsdom (npm i -D jsdom); sem ele, é ignorado
 ```
 
 Cobrem: extensões e casos de borda, todos os modos de case, regex/grupos/palavra inteira,
@@ -224,6 +242,9 @@ script equivalente.
 - Pastas aninhadas: a importação preserva o caminho relativo como texto, mas a
   renomeação in-place opera em uma pasta por vez.
 - `{date}` em templates usa a data local do navegador no momento do cálculo.
+- Na versão arquivo único, o processamento roda na thread principal (sem Worker):
+  listas muito grandes (> 20 mil itens) podem engasgar a digitação.
+- CSS usa `color-mix()` — exige navegador de 2023 em diante.
 
 ---
 
@@ -256,7 +277,10 @@ main / root*. All asset paths are relative.
 - **Recipes**: 12 built-in presets + save/export/import your own;
 - 120-step undo with a navigable timeline, command palette (`Ctrl+K`), focus mode,
   keyboard shortcuts, dark/light/system themes, accent colors, PWA offline;
-- **41 unit tests** for the transformation engine, validators, script generators and parsers.
+- **41 unit tests** for the transformation engine, validators, script generators and parsers,
+  plus 10 modal tests (optional jsdom dependency);
+- **Single-file build**: `npm run build` produces `legacy/v5.single.html` — the whole app
+  in one `.html` file that runs from `file://`, a USB stick or an email attachment.
 
 ### Architecture in one line
 
@@ -281,6 +305,9 @@ O caminho mais fácil para adicionar um novo passo:
 3. **`assets/js/ui/stepEditors.js`** — crie o editor do passo;
 4. **`tests/core.test.js`** — cubra o comportamento (incluindo casos de borda);
 5. `npm test` deve continuar verde.
+
+Ao mexer em CSS/JS do app (não só do núcleo), rode também `npm run build` para
+regenerar `legacy/v5.single.html` — é ele que vai para quem usa o arquivo único.
 
 ### Roadmap (v5.1+)
 
